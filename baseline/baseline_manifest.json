@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "manifest_version": "1.0",
-  "baseline_name": "AICtrl 1.0.x Baseline Test",
+  "baseline_name": "AICtrl 1.x Baseline Test",
   "baseline_version": "1.4.0",
   "schema_version": "1.1",
   "min_aictrl_version": ">= 1.0.0",

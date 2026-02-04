@@ -884,12 +884,12 @@ def create_parser() -> argparse.ArgumentParser:
     # demo command
     demo_parser = subparsers.add_parser(
         "demo",
-        help="Run baseline demo with artifacts and verification instructions",
+        help="Run demo showcasing v1.2-v1.4 features (no side effects except --out dir)",
     )
     demo_parser.add_argument(
         "--quick",
         action="store_true",
-        help="Quick mode: suppress verbose per-test output",
+        help="Quick mode: suppress verbose baseline per-test output",
     )
     demo_parser.add_argument(
         "--out",
