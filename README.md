@@ -66,6 +66,95 @@ python baseline/run_baseline.py --verify baseline/results
 
 Some tests are intentionally expected to fail (e.g., BL-080 tests host safety violation detection). These are documented in `baseline/baseline_manifest.json` under `expected_fail_test_ids`.
 
+## Demo
+
+The `aictrl demo` command provides a polished, client-facing demonstration that runs the full baseline test suite and generates all standard artifacts.
+
+### Quick Demo
+
+```bash
+# Run demo with summary output only (quick mode)
+aictrl demo --quick
+
+# Run demo with custom output directory
+aictrl demo --quick --out /tmp/aictrl-demo
+```
+
+### Full Demo
+
+```bash
+# Run demo with full per-test output
+aictrl demo --out /tmp/aictrl-demo
+```
+
+### What You Should See
+
+```
+============================================================
+AICtrl Baseline Demo
+============================================================
+
+Output directory: /tmp/aictrl-demo
+
+Running baseline (quick mode)...
+------------------------------------------------------------
+BASELINE: PASS
+------------------------------------------------------------
+
+Copying artifacts to output directory...
+  aictrl-baseline-report.txt
+  aictrl-baseline-attestation.json
+  aictrl-spec-coverage.txt
+  aictrl-baseline.digest.txt
+  aictrl-baseline-manifest.json
+
+============================================================
+Demo Summary
+============================================================
+
+Baseline Result: PASS
+
+Test Results:
+  Total:               29
+  Passed:              28
+  Expected Failures:   1
+  Unexpected Failures: 0
+
+Expected Failures (by design):
+  - BL-080: Host safety violation without flag
+
+NOTE: Expected failures verify that safety guards work correctly.
+      These are NOT regressions.
+
+Artifacts Produced:
+  /tmp/aictrl-demo/aictrl-baseline-attestation.json
+  /tmp/aictrl-demo/aictrl-baseline-manifest.json
+  /tmp/aictrl-demo/aictrl-baseline-report.txt
+  /tmp/aictrl-demo/aictrl-baseline.digest.txt
+  /tmp/aictrl-demo/aictrl-spec-coverage.txt
+
+------------------------------------------------------------
+Next Steps
+------------------------------------------------------------
+
+Verify offline (check artifact integrity):
+  python baseline/run_baseline.py --verify /tmp/aictrl-demo
+
+Compare two baseline runs (drift detection):
+  python baseline/compare_baselines.py \
+    /tmp/aictrl-demo/aictrl-baseline-attestation.json \
+    <other_run>/aictrl-baseline-attestation.json
+
+============================================================
+```
+
+### Demo Characteristics
+
+- **Read-only**: No privileged actions, no host modifications
+- **Deterministic**: Same inputs produce same outputs
+- **Offline-safe**: No network calls required
+- **ASCII-only**: All text artifacts contain only ASCII characters
+
 ## CLI Commands
 
 ### `aictrl version`
