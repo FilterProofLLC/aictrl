@@ -8,7 +8,8 @@ baseline:
   description: |
     Canonical baseline tests for AICtrl CLI governance and safety guarantees.
     These tests represent durable compliance artifacts for audits.
-  target_version: "1.0.2"
+  min_version: "1.0.0"
+  min_version_note: "Minimum AICtrl version required to run this baseline"
 
 tests:
   # ============================================================================
@@ -457,3 +458,69 @@ tests:
       nist: "SC-5"
       federal: "EO-14110-4.2"
     notes: "Same inputs must produce same decision (excluding timestamps/IDs)."
+
+  # ============================================================================
+  # Cryptographic Operations (Phase 9)
+  # ============================================================================
+  - id: "BL-120"
+    title: "Keygen without --dangerous fails safely"
+    command: ["python", "-m", "aictrl", "crypto", "keygen",
+              "--out", "/tmp/aictrl-test-bl120.pem"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - 'requires --dangerous'
+    spec:
+      internal: "CRYPTO-KEYGEN-GATE-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Key generation requires explicit --dangerous flag as safety gate."
+
+  - id: "BL-121"
+    title: "Keygen with --dangerous creates valid key"
+    command: ["python", "-m", "aictrl", "crypto", "keygen",
+              "--out", "/tmp/aictrl-test-bl121.pem", "--dangerous", "--force"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"success": true'
+        - '"algorithm": "ed25519"'
+        - '"format": "PEM (PKCS8)"'
+    spec:
+      internal: "CRYPTO-KEYGEN-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Ed25519 key generation produces valid PEM key with correct permissions."
+
+  - id: "BL-122"
+    title: "Sign and verify roundtrip succeeds"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl122-* && echo 'test data' > /tmp/aictrl-bl122-data.txt && python -m aictrl crypto keygen --out /tmp/aictrl-bl122-key.pem --dangerous --force 2>/dev/null && python -m aictrl crypto sign --key /tmp/aictrl-bl122-key.pem --in /tmp/aictrl-bl122-data.txt --out /tmp/aictrl-bl122-data.sig && python -m aictrl crypto verify --pubkey /tmp/aictrl-bl122-key.pem.pub --in /tmp/aictrl-bl122-data.txt --sig /tmp/aictrl-bl122-data.sig"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"valid": true'
+        - '"algorithm": "ed25519"'
+    spec:
+      internal: "CRYPTO-SIGN-VERIFY-001"
+      nist: "SC-13"
+      federal: "EO-14110-4.2"
+    notes: "Full Ed25519 sign/verify roundtrip produces valid signature."
+
+  - id: "BL-123"
+    title: "Sign with missing key fails safely"
+    command: ["python", "-m", "aictrl", "crypto", "sign",
+              "--key", "/tmp/nonexistent-key-bl123.pem",
+              "--in", "/tmp/aictrl-bl122-data.txt",
+              "--out", "/tmp/aictrl-bl123.sig"]
+    expect:
+      exit_code: 1
+      stdout_contains:
+        - '"success": false'
+        - 'not found'
+    spec:
+      internal: "CRYPTO-ERROR-001"
+      nist: "SC-13"
+      federal: "EO-14110-4.2"
+    notes: "Missing key produces clear error message."
