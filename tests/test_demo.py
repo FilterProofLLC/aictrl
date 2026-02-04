@@ -31,8 +31,8 @@ class TestDemoCommand:
             # Check exit code
             assert result.returncode == 0, f"Demo failed with stderr: {result.stderr}"
 
-            # Check expected artifacts exist
-            expected_files = [
+            # Check expected baseline artifacts exist
+            baseline_files = [
                 "aictrl-baseline-report.txt",
                 "aictrl-baseline-attestation.json",
                 "aictrl-spec-coverage.txt",
@@ -40,12 +40,28 @@ class TestDemoCommand:
                 "aictrl-baseline-manifest.json",
             ]
 
-            for filename in expected_files:
+            for filename in baseline_files:
                 artifact_path = out_dir / filename
-                assert artifact_path.exists(), f"Missing artifact: {filename}"
+                assert artifact_path.exists(), f"Missing baseline artifact: {filename}"
+
+            # Check expected v1.2-v1.4 demo artifacts exist
+            demo_artifacts = [
+                "version.json",
+                "crypto_status.json",
+                "baseline_summary.txt",
+                "exec_proposal.json",
+                "exec_review_valid.json",
+                "exec_propose_dangerous_blocked.txt",
+                "exec_review_tampered.json",
+                "demo_digest.txt",
+            ]
+
+            for filename in demo_artifacts:
+                artifact_path = out_dir / filename
+                assert artifact_path.exists(), f"Missing demo artifact: {filename}"
 
     def test_demo_output_contains_verify_instruction(self):
-        """Test that demo output contains 'Verify offline' instruction."""
+        """Test that demo output contains verification instruction."""
         import subprocess
         import sys
 
@@ -61,7 +77,7 @@ class TestDemoCommand:
             )
 
             assert result.returncode == 0
-            assert "Verify offline" in result.stdout, "Output should contain verification instructions"
+            assert "Verify baseline" in result.stdout, "Output should contain verification instructions"
 
     def test_demo_labels_expected_failures(self):
         """Test that expected failures are labeled in demo output."""
@@ -159,6 +175,10 @@ class TestDemoCommand:
                 "aictrl-baseline-report.txt",
                 "aictrl-spec-coverage.txt",
                 "aictrl-baseline.digest.txt",
+                "baseline_summary.txt",
+                "exec_propose_dangerous_blocked.txt",
+                "exec_review_tampered.json",
+                "demo_digest.txt",
             ]
 
             for filename in text_files:
@@ -169,6 +189,127 @@ class TestDemoCommand:
                     # Check all bytes are ASCII (0-127)
                     non_ascii = [b for b in content if b > 127]
                     assert len(non_ascii) == 0, f"{filename} contains non-ASCII characters"
+
+
+class TestDemoPhase12:
+    """Tests for Phase 12 Part 1 demo features."""
+
+    def test_demo_phase12_proposal_valid(self):
+        """Test that demo produces valid exec proposal."""
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir) / "demo_phase12_test"
+
+            result = subprocess.run(
+                [sys.executable, "-m", "aictrl", "demo", "--quick", "--out", str(out_dir)],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                cwd=Path(__file__).parent.parent,
+            )
+
+            assert result.returncode == 0
+
+            # Validate exec_proposal.json
+            proposal_path = out_dir / "exec_proposal.json"
+            assert proposal_path.exists()
+
+            with open(proposal_path) as f:
+                proposal = json.load(f)
+
+            # Check required fields
+            assert "proposal_id" in proposal
+            assert "content_hash" in proposal
+            assert "status" in proposal
+            assert proposal["status"] == "proposed"
+            assert "request" in proposal
+            assert proposal["request"]["adapter"] == "noop"
+            assert proposal["request"]["action"] == "read"
+
+    def test_demo_phase12_review_valid(self):
+        """Test that demo produces valid exec review."""
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir) / "demo_review_test"
+
+            result = subprocess.run(
+                [sys.executable, "-m", "aictrl", "demo", "--quick", "--out", str(out_dir)],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                cwd=Path(__file__).parent.parent,
+            )
+
+            assert result.returncode == 0
+
+            # Validate exec_review_valid.json
+            review_path = out_dir / "exec_review_valid.json"
+            assert review_path.exists()
+
+            with open(review_path) as f:
+                review = json.load(f)
+
+            # Check required fields
+            assert "hash_verified" in review
+            assert review["hash_verified"] is True
+
+    def test_demo_phase12_dangerous_blocked(self):
+        """Test that demo shows dangerous gate blocking."""
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir) / "demo_dangerous_test"
+
+            result = subprocess.run(
+                [sys.executable, "-m", "aictrl", "demo", "--quick", "--out", str(out_dir)],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                cwd=Path(__file__).parent.parent,
+            )
+
+            assert result.returncode == 0
+
+            # Validate exec_propose_dangerous_blocked.txt
+            blocked_path = out_dir / "exec_propose_dangerous_blocked.txt"
+            assert blocked_path.exists()
+
+            with open(blocked_path) as f:
+                content = f.read()
+
+            assert "Exit code: 2" in content
+
+    def test_demo_phase12_tamper_detected(self):
+        """Test that demo shows tamper detection."""
+        import subprocess
+        import sys
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            out_dir = Path(tmpdir) / "demo_tamper_test"
+
+            result = subprocess.run(
+                [sys.executable, "-m", "aictrl", "demo", "--quick", "--out", str(out_dir)],
+                capture_output=True,
+                text=True,
+                timeout=300,
+                cwd=Path(__file__).parent.parent,
+            )
+
+            assert result.returncode == 0
+
+            # Validate exec_review_tampered.json
+            tampered_path = out_dir / "exec_review_tampered.json"
+            assert tampered_path.exists()
+
+            with open(tampered_path) as f:
+                content = f.read()
+
+            assert "Exit code: 2" in content
 
 
 class TestDemoIntegration:

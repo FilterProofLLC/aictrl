@@ -1,10 +1,10 @@
-# AICtrl 1.0.x Baseline Test Definition
+# AICtrl 1.x Baseline Test Definition
 # This file defines canonical baseline tests for governance and safety guarantees.
 # These tests verify invariants and policy enforcement, not functional execution.
 
 baseline:
-  name: "AICtrl 1.0.x Baseline Test"
-  version: "1.0"
+  name: "AICtrl 1.x Baseline Test"
+  version: "1.4"
   description: |
     Canonical baseline tests for AICtrl CLI governance and safety guarantees.
     These tests represent durable compliance artifacts for audits.
@@ -22,7 +22,7 @@ tests:
       exit_code: 0
       stdout_contains:
         - "aictrl"
-        - "1.0"
+        - '"version"'
     spec:
       internal: "CLI-SURFACE-001"
       nist: "ID.AM-2"
