@@ -1,22 +1,15 @@
 """aictrl attest command - attestation statement generation and verification.
 
-This module provides SIMULATED attestation for AICtrl.
+Phase 11: Signed attestation support added.
+- Unsigned attestation (default): simulation only, emits warning
+- Signed attestation: requires --key and --dangerous flags
+- Signature verification: requires explicit --pubkey (no trust store)
 
-CRITICAL: This is SIMULATION ONLY.
-- NO real cryptographic signing
-- NO private keys
-- NO hardware security modules
-- NO network calls
-- NO TPM operations
-
-Attestation binds to:
-- Boot measurements (Phase 6)
-- Invariant results (Phase 4)
-- Evidence bundles (Phase 5)
-
-IMPORTANT DISTINCTIONS:
+IMPORTANT:
+- Signed attestation only. No enforcement.
 - Attestation is NOT authentication (does not prove identity)
 - Attestation is NOT authorization (does not grant permissions)
+- Key usage requires explicit --dangerous flag
 
 See docs/security/ATTESTATION_MODEL.md for semantics.
 """
@@ -44,14 +37,19 @@ ATTEST_GENERATION_ERROR = "AICTRL-8002"
 ATTEST_VERIFICATION_ERROR = "AICTRL-8003"
 ATTEST_STATEMENT_PARSE_ERROR = "AICTRL-8004"
 ATTEST_IDENTITY_MISMATCH = "AICTRL-8005"
+# Phase 11 error codes
+ATTEST_SIGN_ERROR = "AICTRL-8010"
+ATTEST_DANGEROUS_REQUIRED = "AICTRL-8011"
+ATTEST_SIG_VERIFY_ERROR = "AICTRL-8012"
+ATTEST_SIG_INVALID = "AICTRL-8013"
 
 
-# Required notices for all attestation statements
-REQUIRED_NOTICES = [
+# Required notices for unsigned attestation statements
+UNSIGNED_NOTICES = [
     {
-        "type": "disclaimer",
+        "type": "warning",
         "severity": "critical",
-        "message": "This attestation is SIMULATION ONLY - not cryptographically signed",
+        "message": "WARNING: This attestation is UNSIGNED - not cryptographically signed",
     },
     {
         "type": "disclaimer",
@@ -66,9 +64,36 @@ REQUIRED_NOTICES = [
     {
         "type": "info",
         "severity": "normal",
-        "message": "See docs/security/ATTESTATION_MODEL.md for attestation semantics",
+        "message": "Use --key and --dangerous to generate signed attestation",
     },
 ]
+
+# Notices for signed attestation statements
+SIGNED_NOTICES = [
+    {
+        "type": "info",
+        "severity": "normal",
+        "message": "This attestation is cryptographically signed with Ed25519",
+    },
+    {
+        "type": "disclaimer",
+        "severity": "critical",
+        "message": "Attestation is NOT authentication - does not prove identity to external parties",
+    },
+    {
+        "type": "disclaimer",
+        "severity": "critical",
+        "message": "Attestation is NOT authorization - does not grant permissions",
+    },
+    {
+        "type": "disclaimer",
+        "severity": "critical",
+        "message": "Signed attestation only. No enforcement in this phase.",
+    },
+]
+
+# Backwards compatibility alias
+REQUIRED_NOTICES = UNSIGNED_NOTICES
 
 
 def calculate_sha256(content: bytes) -> str:
@@ -593,4 +618,367 @@ def compare_attestation_statements(
         "statement2_generated": stmt2.get("generated_at"),
         "differences": differences,
         "difference_count": len(differences),
+    }
+
+
+# ============================================================================
+# Phase 11: Signed Attestation Functions
+# ============================================================================
+
+# Dangerous warning for signed attestation
+SIGNED_ATTEST_WARNING = """
+================================================================================
+                         SIGNED ATTESTATION WARNING
+================================================================================
+
+You are generating a SIGNED attestation statement.
+
+This operation:
+- Uses your private key to sign the attestation
+- Creates a cryptographic binding to the attestation content
+- Can be verified by anyone with your public key
+
+This does NOT:
+- Enforce any policy or authorization
+- Grant any permissions
+- Authenticate identity to external parties
+- Substitute for proper security controls
+
+The --dangerous flag confirms you understand these implications.
+
+================================================================================
+"""
+
+
+def get_key_fingerprint(pubkey_pem: bytes) -> str:
+    """Calculate fingerprint of a public key.
+
+    Args:
+        pubkey_pem: Public key in PEM format
+
+    Returns:
+        SHA-256 fingerprint (first 16 hex chars)
+    """
+    return calculate_sha256(pubkey_pem)[:16]
+
+
+def generate_signed_attestation(
+    context: Optional[str] = None,
+    evidence_bundle_path: Optional[str] = None,
+    key_path: Optional[str] = None,
+    dangerous: bool = False,
+) -> dict[str, Any]:
+    """Generate a signed attestation statement.
+
+    Phase 11: Requires --key and --dangerous flags.
+
+    Args:
+        context: Execution context override (must be aios-sandbox)
+        evidence_bundle_path: Optional path to evidence bundle to bind
+        key_path: Path to private key for signing
+        dangerous: Must be True to proceed (safety gate)
+
+    Returns:
+        Signed attestation statement dictionary
+
+    Raises:
+        AICtrlError: If dangerous not set or signing fails
+    """
+    # Safety gate: require --dangerous for signed attestation
+    if not dangerous:
+        return {
+            "success": False,
+            "error": "Signed attestation requires --dangerous flag",
+            "error_code": ATTEST_DANGEROUS_REQUIRED,
+            "remediation": [
+                "Add --dangerous flag to confirm you understand the implications",
+                "Use 'aictrl attest generate --key <path> --dangerous'",
+            ],
+            "exit_code": 2,
+        }
+
+    # Validate key path
+    if not key_path:
+        raise AICtrlError(
+            ATTEST_SIGN_ERROR,
+            "Private key path required for signed attestation",
+            cause="--key argument not provided",
+            remediation=["Provide --key <path> to private key"],
+        )
+
+    key_file = Path(key_path)
+    if not key_file.exists():
+        raise AICtrlError(
+            ATTEST_SIGN_ERROR,
+            f"Private key not found: {key_path}",
+            cause="File does not exist",
+            remediation=["Check the key path", "Use 'aictrl crypto keygen --dangerous' to generate a key"],
+        )
+
+    # Check for cryptography library
+    try:
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from cryptography.hazmat.primitives import serialization
+    except ImportError:
+        raise AICtrlError(
+            ATTEST_SIGN_ERROR,
+            "cryptography library not available",
+            cause="Required dependency not installed",
+            remediation=["Install: pip install cryptography"],
+        )
+
+    # Load private key
+    try:
+        with open(key_file, "rb") as f:
+            private_key = serialization.load_pem_private_key(f.read(), password=None)
+        if not isinstance(private_key, ed25519.Ed25519PrivateKey):
+            raise AICtrlError(
+                ATTEST_SIGN_ERROR,
+                "Key is not an Ed25519 private key",
+                cause="Wrong key type",
+                remediation=["Use an Ed25519 key generated with 'aictrl crypto keygen --dangerous'"],
+            )
+    except Exception as e:
+        raise AICtrlError(
+            ATTEST_SIGN_ERROR,
+            "Failed to load private key",
+            cause=str(e),
+            remediation=["Check key file format (PEM PKCS8)"],
+        )
+
+    # Get public key for fingerprint
+    public_key = private_key.public_key()
+    public_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+    key_fingerprint = get_key_fingerprint(public_pem)
+
+    # Generate base attestation statement
+    base_statement = generate_attestation_statement(
+        context=context,
+        evidence_bundle_path=evidence_bundle_path,
+    )
+
+    stmt = base_statement["attestation_statement"]
+
+    # Update notices for signed attestation
+    stmt["notices"] = SIGNED_NOTICES
+
+    # Create content to sign (canonical JSON of claims + identity)
+    sign_content = {
+        "claims": stmt["claims"],
+        "identity": stmt["identity"],
+        "bindings": stmt["bindings"],
+        "statement_id": stmt["statement_id"],
+        "generated_at": stmt["generated_at"],
+    }
+    content_json = json.dumps(sign_content, sort_keys=True, separators=(",", ":"))
+    content_bytes = content_json.encode("utf-8")
+    content_hash = calculate_sha256(content_bytes)
+
+    # Sign the content
+    try:
+        import base64
+        signature_bytes = private_key.sign(content_bytes)
+        signature_b64 = base64.b64encode(signature_bytes).decode("ascii")
+    except Exception as e:
+        raise AICtrlError(
+            ATTEST_SIGN_ERROR,
+            "Failed to sign attestation",
+            cause=str(e),
+            remediation=["Check key file integrity"],
+        )
+
+    # Build signature section
+    stmt["signature"] = {
+        "signed": True,
+        "algorithm": "Ed25519",
+        "content_hash": content_hash,
+        "value": signature_b64,
+        "key_fingerprint": key_fingerprint,
+        "note": "Signed attestation only. No enforcement.",
+    }
+
+    # Remove old placeholder
+    if "signature_placeholder" in stmt:
+        del stmt["signature_placeholder"]
+
+    return {
+        "attestation_statement": stmt,
+        "warning_displayed": SIGNED_ATTEST_WARNING,
+    }
+
+
+def verify_attestation_signature(
+    statement_path: str,
+    pubkey_path: str,
+) -> dict[str, Any]:
+    """Verify the cryptographic signature on an attestation statement.
+
+    Phase 11: Requires explicit --pubkey (no trust store).
+
+    Args:
+        statement_path: Path to attestation statement JSON
+        pubkey_path: Path to public key for verification
+
+    Returns:
+        Verification result dictionary
+
+    Raises:
+        AICtrlError: If verification fails
+    """
+    # Validate file paths
+    statement_file = Path(statement_path)
+    pubkey_file = Path(pubkey_path)
+
+    if not statement_file.exists():
+        raise AICtrlError(
+            ATTEST_SIG_VERIFY_ERROR,
+            f"Statement file not found: {statement_path}",
+            cause="File does not exist",
+            remediation=["Check the file path"],
+        )
+
+    if not pubkey_file.exists():
+        raise AICtrlError(
+            ATTEST_SIG_VERIFY_ERROR,
+            f"Public key not found: {pubkey_path}",
+            cause="File does not exist",
+            remediation=["Check the public key path"],
+        )
+
+    # Check for cryptography library
+    try:
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.exceptions import InvalidSignature
+        import base64
+    except ImportError:
+        raise AICtrlError(
+            ATTEST_SIG_VERIFY_ERROR,
+            "cryptography library not available",
+            cause="Required dependency not installed",
+            remediation=["Install: pip install cryptography"],
+        )
+
+    # Load statement
+    try:
+        with open(statement_file, "r") as f:
+            statement = json.load(f)
+    except json.JSONDecodeError as e:
+        raise AICtrlError(
+            ATTEST_SIG_VERIFY_ERROR,
+            "Invalid JSON in statement file",
+            cause=str(e),
+            remediation=["Check the statement file format"],
+        )
+
+    stmt = statement.get("attestation_statement", {})
+
+    # Check if statement is signed
+    signature_info = stmt.get("signature", {})
+    if not signature_info.get("signed"):
+        return {
+            "valid": False,
+            "error": "Statement is not signed",
+            "statement_id": stmt.get("statement_id"),
+            "checked_at": generate_timestamp(),
+            "note": "Use --key and --dangerous to generate signed attestation",
+        }
+
+    # Load public key
+    try:
+        with open(pubkey_file, "rb") as f:
+            pubkey_pem = f.read()
+            public_key = serialization.load_pem_public_key(pubkey_pem)
+        if not isinstance(public_key, ed25519.Ed25519PublicKey):
+            raise AICtrlError(
+                ATTEST_SIG_VERIFY_ERROR,
+                "Key is not an Ed25519 public key",
+                cause="Wrong key type",
+                remediation=["Use the public key corresponding to the signing key"],
+            )
+    except Exception as e:
+        raise AICtrlError(
+            ATTEST_SIG_VERIFY_ERROR,
+            "Failed to load public key",
+            cause=str(e),
+            remediation=["Check public key file format"],
+        )
+
+    # Verify key fingerprint matches
+    provided_fingerprint = get_key_fingerprint(pubkey_pem)
+    statement_fingerprint = signature_info.get("key_fingerprint", "")
+
+    if provided_fingerprint != statement_fingerprint:
+        return {
+            "valid": False,
+            "error": "Key fingerprint mismatch",
+            "statement_id": stmt.get("statement_id"),
+            "checked_at": generate_timestamp(),
+            "provided_fingerprint": provided_fingerprint,
+            "expected_fingerprint": statement_fingerprint,
+            "note": "The provided public key does not match the signing key",
+        }
+
+    # Reconstruct content that was signed
+    sign_content = {
+        "claims": stmt.get("claims", {}),
+        "identity": stmt.get("identity", {}),
+        "bindings": stmt.get("bindings", {}),
+        "statement_id": stmt.get("statement_id"),
+        "generated_at": stmt.get("generated_at"),
+    }
+    content_json = json.dumps(sign_content, sort_keys=True, separators=(",", ":"))
+    content_bytes = content_json.encode("utf-8")
+
+    # Verify content hash
+    computed_hash = calculate_sha256(content_bytes)
+    stored_hash = signature_info.get("content_hash", "")
+
+    if computed_hash != stored_hash:
+        return {
+            "valid": False,
+            "error": "Content hash mismatch - statement may be tampered",
+            "statement_id": stmt.get("statement_id"),
+            "checked_at": generate_timestamp(),
+            "computed_hash": computed_hash,
+            "stored_hash": stored_hash,
+        }
+
+    # Verify signature
+    try:
+        signature_b64 = signature_info.get("value", "")
+        signature_bytes = base64.b64decode(signature_b64)
+        public_key.verify(signature_bytes, content_bytes)
+    except InvalidSignature:
+        return {
+            "valid": False,
+            "error": "Signature verification failed",
+            "statement_id": stmt.get("statement_id"),
+            "checked_at": generate_timestamp(),
+            "algorithm": signature_info.get("algorithm"),
+            "key_fingerprint": provided_fingerprint,
+            "note": "Signature does not match content - statement may be tampered",
+        }
+    except Exception as e:
+        raise AICtrlError(
+            ATTEST_SIG_VERIFY_ERROR,
+            "Signature verification error",
+            cause=str(e),
+            remediation=["Check signature format"],
+        )
+
+    # Success
+    return {
+        "valid": True,
+        "statement_id": stmt.get("statement_id"),
+        "generated_at": stmt.get("generated_at"),
+        "checked_at": generate_timestamp(),
+        "algorithm": signature_info.get("algorithm"),
+        "key_fingerprint": provided_fingerprint,
+        "content_hash": computed_hash,
+        "signature_verified": True,
+        "note": "Signed attestation only. No enforcement.",
     }
