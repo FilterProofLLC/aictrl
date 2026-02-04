@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.dev/schemas/bbail/status.schema.json",
+  "title": "bbail status output",
+  "description": "Schema for bbail status command output",
+  "type": "object",
+  "required": ["timestamp_utc", "host", "os", "resources", "network", "notes"],
+  "properties": {
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of when status was collected"
+    },
+    "host": {
+      "type": "object",
+      "required": ["hostname"],
+      "properties": {
+        "hostname": {
+          "type": "string",
+          "description": "System hostname"
+        },
+        "kernel": {
+          "type": ["string", "null"],
+          "description": "Kernel version"
+        },
+        "arch": {
+          "type": ["string", "null"],
+          "description": "System architecture (e.g., x86_64, aarch64)"
+        }
+      }
+    },
+    "os": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": ["string", "null"],
+          "description": "Operating system name"
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Operating system version"
+        }
+      }
+    },
+    "resources": {
+      "type": "object",
+      "properties": {
+        "cpu_count": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "description": "Number of CPU cores"
+        },
+        "mem_total_bytes": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Total memory in bytes"
+        }
+      }
+    },
+    "network": {
+      "type": "object",
+      "properties": {
+        "has_ipv4": {
+          "type": ["boolean", "null"],
+          "description": "Whether system has IPv4 connectivity"
+        },
+        "default_route_present": {
+          "type": ["boolean", "null"],
+          "description": "Whether a default route is configured"
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Notes about fields that could not be determined or other observations"
+    }
+  }
+}

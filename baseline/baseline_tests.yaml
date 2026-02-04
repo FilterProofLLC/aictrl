@@ -1,0 +1,459 @@
+# AICtrl 1.0.x Baseline Test Definition
+# This file defines canonical baseline tests for governance and safety guarantees.
+# These tests verify invariants and policy enforcement, not functional execution.
+
+baseline:
+  name: "AICtrl 1.0.x Baseline Test"
+  version: "1.0"
+  description: |
+    Canonical baseline tests for AICtrl CLI governance and safety guarantees.
+    These tests represent durable compliance artifacts for audits.
+  target_version: "1.0.2"
+
+tests:
+  # ============================================================================
+  # CLI Surface Introspection
+  # ============================================================================
+  - id: "BL-001"
+    title: "Version flag returns valid output"
+    command: ["python", "-m", "aictrl", "--version"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - "aictrl"
+        - "1.0"
+    spec:
+      internal: "CLI-SURFACE-001"
+      nist: "ID.AM-2"
+      federal: "EO-14110-4.1"
+    notes: "Validates CLI is installed and reports version correctly."
+
+  - id: "BL-002"
+    title: "Version subcommand returns JSON output"
+    command: ["python", "-m", "aictrl", "version"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"name"'
+        - '"version"'
+        - '"product"'
+    spec:
+      internal: "CLI-SURFACE-002"
+      nist: "ID.AM-2"
+      federal: "EO-14110-4.1"
+    notes: "Version subcommand returns structured JSON with build metadata."
+
+  - id: "BL-003"
+    title: "Help flag returns usage information"
+    command: ["python", "-m", "aictrl", "--help"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - "usage"
+        - "aictrl"
+    spec:
+      internal: "CLI-SURFACE-003"
+      nist: "ID.AM-2"
+      federal: "EO-14110-4.1"
+    notes: "Help output provides user guidance for CLI usage."
+
+  - id: "BL-004"
+    title: "Authz help shows policy documentation"
+    command: ["python", "-m", "aictrl", "authz", "--help"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - "authz"
+        - "policy"
+    spec:
+      internal: "CLI-SURFACE-004"
+      nist: "GV.PO-1"
+      federal: "EO-14110-4.2"
+    notes: "Authorization subsystem is discoverable via help."
+
+  # ============================================================================
+  # Authorization Policy - Deny-by-Default
+  # ============================================================================
+  - id: "BL-010"
+    title: "Authz denies tooling in aios-base by default"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "tooling", "--action", "read", "--context", "aios-base"]
+    expect:
+      exit_code: 1
+      stdout_contains:
+        - '"decision"'
+        - '"DENY"'
+    spec:
+      internal: "INV-016"
+      nist: "AC-3"
+      federal: "EO-14110-4.5"
+    notes: "Deny-by-default policy enforced for tooling in production context. Exit code 1 indicates denied action."
+
+  - id: "BL-011"
+    title: "Authz requires PROPOSAL for tooling write in sandbox"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "tooling", "--action", "write", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"decision"'
+        - '"PROPOSAL"'
+    spec:
+      internal: "INV-005"
+      nist: "AC-3"
+      federal: "EO-14110-4.5"
+    notes: "Write operations require human approval via PROPOSAL decision."
+
+  - id: "BL-012"
+    title: "Authz allows system read in sandbox"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "system", "--action", "read", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"decision"'
+        - '"ALLOW"'
+    spec:
+      internal: "POLICY-SANDBOX-001"
+      nist: "AC-3"
+      federal: "EO-14110-4.2"
+    notes: "System read operations are allowed in sandbox context."
+
+  - id: "BL-013"
+    title: "Authz denies invalid subject"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "ai_agent", "--action", "read", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 2
+      stderr_contains:
+        - "invalid choice"
+    spec:
+      internal: "INV-004"
+      nist: "AC-6"
+      federal: "EO-14110-4.5"
+    notes: "AI cannot be a valid subject - enforced at input validation."
+
+  - id: "BL-014"
+    title: "Authz denies invalid action"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "tooling", "--action", "execute", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 2
+      stderr_contains:
+        - "invalid choice"
+    spec:
+      internal: "INV-004"
+      nist: "AC-6"
+      federal: "EO-14110-4.5"
+    notes: "Execute is not a valid action - AI cannot execute."
+
+  # ============================================================================
+  # Authorization Enforcement Points
+  # ============================================================================
+  - id: "BL-020"
+    title: "Enforcement points are enumerable"
+    command: ["python", "-m", "aictrl", "authz", "enforcement"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"enforcement_points"'
+        - '"EP-001"'
+        - '"EP-010"'
+    spec:
+      internal: "AUTHZ-ENFORCEMENT-001"
+      nist: "AC-3(7)"
+      federal: "EO-14110-4.2"
+    notes: "All enforcement points are documented and discoverable."
+
+  - id: "BL-021"
+    title: "Policy summary shows rule counts"
+    command: ["python", "-m", "aictrl", "authz", "policy", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"rule_counts"'
+        - '"total"'
+        - '"default"'
+        - '"deny"'
+    spec:
+      internal: "AUTHZ-POLICY-001"
+      nist: "GV.PO-1"
+      federal: "EO-14110-4.2"
+    notes: "Policy is introspectable with rule counts and default policy."
+
+  # ============================================================================
+  # Adapter Inspection - AI Cannot Execute
+  # ============================================================================
+  - id: "BL-030"
+    title: "Adapter inspection shows AI prohibition"
+    command: ["python", "-m", "aictrl", "exec", "adapters"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"ai_adapter_allowed"'
+        - "false"
+        - '"ai_prohibition"'
+    spec:
+      internal: "INV-004"
+      nist: "AC-6(9)"
+      federal: "EO-14110-4.5"
+    notes: "AI is explicitly prohibited from serving as execution adapter."
+
+  - id: "BL-031"
+    title: "Adapter inspection shows simulation flag"
+    command: ["python", "-m", "aictrl", "exec", "adapters"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"simulation"'
+        - "true"
+    spec:
+      internal: "EXEC-INSPECT-001"
+      nist: "CA-8"
+      federal: "EO-14110-4.3"
+    notes: "Adapter info is inspection-only, never executes."
+
+  - id: "BL-032"
+    title: "Adapter inspection lists invariant violations for AI"
+    command: ["python", "-m", "aictrl", "exec", "adapters"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"invariant_violations"'
+        - "INV-004"
+    spec:
+      internal: "INV-004"
+      nist: "AC-6(9)"
+      federal: "EO-14110-4.5"
+    notes: "AI adapter prohibition cites specific invariant violations."
+
+  # ============================================================================
+  # Boundary Inspection - ai_can_cross=false
+  # ============================================================================
+  - id: "BL-040"
+    title: "Boundary inspection shows execution barrier"
+    command: ["python", "-m", "aictrl", "exec", "boundary"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"simulation_barrier"'
+        - '"one_way"'
+    spec:
+      internal: "EXEC-BOUNDARY-001"
+      nist: "SC-7"
+      federal: "EO-14110-4.5"
+    notes: "Execution boundary is one-way and cannot be crossed by AI."
+
+  - id: "BL-041"
+    title: "Boundary inspection shows AI cannot cross"
+    command: ["python", "-m", "aictrl", "exec", "boundary"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"ai_can_cross"'
+        - "false"
+    spec:
+      internal: "INV-004"
+      nist: "SC-7"
+      federal: "EO-14110-4.5"
+    notes: "AI is explicitly prevented from crossing execution boundary."
+
+  - id: "BL-042"
+    title: "Boundary inspection shows human gate"
+    command: ["python", "-m", "aictrl", "exec", "boundary"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"human_gated"'
+        - "true"
+    spec:
+      internal: "INV-005"
+      nist: "AC-3(7)"
+      federal: "EO-14110-4.5"
+    notes: "Execution requires human approval at boundary."
+
+  # ============================================================================
+  # Execution Readiness - Blockers Enumerated
+  # ============================================================================
+  - id: "BL-050"
+    title: "Readiness shows blockers when not ready"
+    command: ["python", "-m", "aictrl", "exec", "readiness", "--request-id", "test-baseline-001"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"ready_for_crossing"'
+        - "false"
+        - '"blockers"'
+    spec:
+      internal: "EXEC-READY-001"
+      nist: "CA-7"
+      federal: "EO-14110-4.3"
+    notes: "Execution readiness explicitly enumerates missing preconditions."
+
+  # ============================================================================
+  # Safe Failure - Missing Artifacts
+  # ============================================================================
+  - id: "BL-060"
+    title: "Sandbox status fails safely when not running"
+    command: ["python", "-m", "aictrl", "sandbox", "status"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"sandbox"'
+        - '"state"'
+    spec:
+      internal: "INV-016"
+      nist: "SI-17"
+      federal: "EO-14110-4.3"
+    notes: "Sandbox status returns gracefully even when sandbox not running."
+
+  - id: "BL-061"
+    title: "Doctor command runs without sandbox"
+    command: ["python", "-m", "aictrl", "doctor"]
+    expect:
+      exit_code_in: [0, 1]
+      stdout_contains:
+        - "invariant"
+    spec:
+      internal: "INV-016"
+      nist: "CA-7"
+      federal: "EO-14110-4.3"
+    notes: "Doctor can run and report status without full sandbox environment."
+
+  # ============================================================================
+  # Invalid Subcommand Rejection
+  # ============================================================================
+  - id: "BL-070"
+    title: "Invalid subcommand is rejected"
+    command: ["python", "-m", "aictrl", "nonexistent"]
+    expect:
+      exit_code: 2
+      stderr_contains:
+        - "invalid choice"
+    expected_failure: true
+    spec:
+      internal: "CLI-VALIDATION-001"
+      nist: "SI-10"
+      federal: "EO-14110-4.1"
+    notes: "Unknown subcommands are rejected with clear error. This is an expected failure by design."
+
+  - id: "BL-071"
+    title: "Invalid nested subcommand is rejected"
+    command: ["python", "-m", "aictrl", "authz", "invalid"]
+    expect:
+      exit_code: 2
+      stderr_contains:
+        - "invalid choice"
+    expected_failure: true
+    spec:
+      internal: "CLI-VALIDATION-002"
+      nist: "SI-10"
+      federal: "EO-14110-4.1"
+    notes: "Unknown nested subcommands are rejected. This is an expected failure by design."
+
+  # ============================================================================
+  # Environment Override Tests
+  # ============================================================================
+  - id: "BL-080"
+    title: "Host safety violation without flag"
+    command: ["python", "-m", "aictrl", "version"]
+    env:
+      AICTRL_HOST_SAFETY: "0"
+    expect:
+      exit_code: 1
+      stderr_contains:
+        - "AICTRL-5010"
+    expected_failure: true
+    spec:
+      internal: "INV-019"
+      nist: "CM-7"
+      federal: "EO-14110-4.5"
+    notes: "Host safety cannot be disabled without explicit acknowledgement. Expected failure."
+
+  - id: "BL-081"
+    title: "Host safety override requires both env and flag"
+    command: ["python", "-m", "aictrl", "--i-accept-risk", "version"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"version"'
+    spec:
+      internal: "INV-019"
+      nist: "CM-7"
+      federal: "EO-14110-4.5"
+    notes: "Host safety flag alone (without env var) does not cause error."
+
+  # ============================================================================
+  # ASCII Output Compliance
+  # ============================================================================
+  - id: "BL-090"
+    title: "Version output is ASCII-only"
+    command: ["python", "-m", "aictrl", "version"]
+    expect:
+      exit_code: 0
+      ascii_only: true
+    spec:
+      internal: "OUTPUT-ASCII-001"
+      nist: "AU-3"
+      federal: "EO-14110-4.1"
+    notes: "All output must be ASCII-only for audit compliance."
+
+  - id: "BL-091"
+    title: "Authz output is ASCII-only"
+    command: ["python", "-m", "aictrl", "authz", "policy", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      ascii_only: true
+    spec:
+      internal: "OUTPUT-ASCII-001"
+      nist: "AU-3"
+      federal: "EO-14110-4.1"
+    notes: "Authorization output uses ASCII-only characters."
+
+  # ============================================================================
+  # Evidence and Audit Trail
+  # ============================================================================
+  - id: "BL-100"
+    title: "Authz decisions include evidence ID"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "tooling", "--action", "read", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"evidence_id"'
+    spec:
+      internal: "INV-008"
+      nist: "AU-3"
+      federal: "EO-14110-4.3"
+    notes: "Every authorization decision generates auditable evidence."
+
+  - id: "BL-101"
+    title: "Authz decisions include timestamp"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "system", "--action", "read", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"timestamp"'
+    spec:
+      internal: "INV-011"
+      nist: "AU-8"
+      federal: "EO-14110-4.3"
+    notes: "Authorization decisions are timestamped for attribution."
+
+  # ============================================================================
+  # Determinism Verification
+  # ============================================================================
+  - id: "BL-110"
+    title: "Policy evaluation is deterministic"
+    command: ["python", "-m", "aictrl", "authz", "check",
+              "--subject", "tooling", "--action", "read", "--context", "aios-sandbox"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"ALLOW"'
+    spec:
+      internal: "POLICY-DETERMINISM-001"
+      nist: "SC-5"
+      federal: "EO-14110-4.2"
+    notes: "Same inputs must produce same decision (excluding timestamps/IDs)."

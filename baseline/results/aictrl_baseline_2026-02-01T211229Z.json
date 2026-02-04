@@ -1,0 +1,439 @@
+{
+  "aictrl_version": "{\"name\": \"aictrl\", \"version\": \"1.0.2\", \"commit\": \"5253023\", \"build_timestamp\": \"2026-02-01T21:12:29.924318+00:00\", \"build_id\": null, \"product\": \"AICtrl - Portable AI Control Plane\"}",
+  "attestation_type": "aictrl-baseline-result",
+  "baseline_name": "AICtrl 1.0.x Baseline Test",
+  "baseline_version": "1.0",
+  "execution_context": "local",
+  "host_metadata": {
+    "hostname": "Travis",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python_version": "3.12.3"
+  },
+  "provenance": {
+    "ci_run_id": null,
+    "execution_environment": "local",
+    "git_branch": "feature/aictrl-baseline-manifest-release",
+    "git_commit": "525302305f606134c9ed0579ea6484066ad62b86",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "repository_url": "git@github.com:FilterProofLLC/AIOS.git"
+  },
+  "schema_version": "1.1",
+  "summary": {
+    "expected_failures": 3,
+    "failed": 1,
+    "overall_result": "PASS",
+    "passed": 28,
+    "total_tests": 29,
+    "unexpected_failures": 0
+  },
+  "test_results": [
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Version flag returns valid output",
+      "duration_seconds": 0.058,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-SURFACE-001",
+        "nist": "ID.AM-2"
+      },
+      "test_id": "BL-001"
+    },
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Version subcommand returns JSON output",
+      "duration_seconds": 0.059,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-SURFACE-002",
+        "nist": "ID.AM-2"
+      },
+      "test_id": "BL-002"
+    },
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Help flag returns usage information",
+      "duration_seconds": 0.061,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-SURFACE-003",
+        "nist": "ID.AM-2"
+      },
+      "test_id": "BL-003"
+    },
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Authz help shows policy documentation",
+      "duration_seconds": 0.063,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "CLI-SURFACE-004",
+        "nist": "GV.PO-1"
+      },
+      "test_id": "BL-004"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz denies tooling in aios-base by default",
+      "duration_seconds": 0.059,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-016",
+        "nist": "AC-3"
+      },
+      "test_id": "BL-010"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz requires PROPOSAL for tooling write in sandbox",
+      "duration_seconds": 0.061,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-005",
+        "nist": "AC-3"
+      },
+      "test_id": "BL-011"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz allows system read in sandbox",
+      "duration_seconds": 0.056,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "POLICY-SANDBOX-001",
+        "nist": "AC-3"
+      },
+      "test_id": "BL-012"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz denies invalid subject",
+      "duration_seconds": 0.077,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6"
+      },
+      "test_id": "BL-013"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz denies invalid action",
+      "duration_seconds": 0.058,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6"
+      },
+      "test_id": "BL-014"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-enforcement",
+      "description": "Enforcement points are enumerable",
+      "duration_seconds": 0.058,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "AUTHZ-ENFORCEMENT-001",
+        "nist": "AC-3(7)"
+      },
+      "test_id": "BL-020"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-enforcement",
+      "description": "Policy summary shows rule counts",
+      "duration_seconds": 0.054,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "AUTHZ-POLICY-001",
+        "nist": "GV.PO-1"
+      },
+      "test_id": "BL-021"
+    },
+    {
+      "actual_result": "pass",
+      "category": "adapter-inspection",
+      "description": "Adapter inspection shows AI prohibition",
+      "duration_seconds": 0.062,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6(9)"
+      },
+      "test_id": "BL-030"
+    },
+    {
+      "actual_result": "pass",
+      "category": "adapter-inspection",
+      "description": "Adapter inspection shows simulation flag",
+      "duration_seconds": 0.057,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "EXEC-INSPECT-001",
+        "nist": "CA-8"
+      },
+      "test_id": "BL-031"
+    },
+    {
+      "actual_result": "pass",
+      "category": "adapter-inspection",
+      "description": "Adapter inspection lists invariant violations for AI",
+      "duration_seconds": 0.057,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6(9)"
+      },
+      "test_id": "BL-032"
+    },
+    {
+      "actual_result": "pass",
+      "category": "boundary-inspection",
+      "description": "Boundary inspection shows execution barrier",
+      "duration_seconds": 0.057,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "EXEC-BOUNDARY-001",
+        "nist": "SC-7"
+      },
+      "test_id": "BL-040"
+    },
+    {
+      "actual_result": "pass",
+      "category": "boundary-inspection",
+      "description": "Boundary inspection shows AI cannot cross",
+      "duration_seconds": 0.057,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "SC-7"
+      },
+      "test_id": "BL-041"
+    },
+    {
+      "actual_result": "pass",
+      "category": "boundary-inspection",
+      "description": "Boundary inspection shows human gate",
+      "duration_seconds": 0.058,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-005",
+        "nist": "AC-3(7)"
+      },
+      "test_id": "BL-042"
+    },
+    {
+      "actual_result": "pass",
+      "category": "execution-readiness",
+      "description": "Readiness shows blockers when not ready",
+      "duration_seconds": 0.068,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "EXEC-READY-001",
+        "nist": "CA-7"
+      },
+      "test_id": "BL-050"
+    },
+    {
+      "actual_result": "pass",
+      "category": "safe-failure",
+      "description": "Sandbox status fails safely when not running",
+      "duration_seconds": 0.072,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-016",
+        "nist": "SI-17"
+      },
+      "test_id": "BL-060"
+    },
+    {
+      "actual_result": "pass",
+      "category": "safe-failure",
+      "description": "Doctor command runs without sandbox",
+      "duration_seconds": 0.143,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-016",
+        "nist": "CA-7"
+      },
+      "test_id": "BL-061"
+    },
+    {
+      "actual_result": "pass",
+      "category": "invalid-input",
+      "description": "Invalid subcommand is rejected",
+      "duration_seconds": 0.056,
+      "expected_result": "fail",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-VALIDATION-001",
+        "nist": "SI-10"
+      },
+      "test_id": "BL-070"
+    },
+    {
+      "actual_result": "pass",
+      "category": "invalid-input",
+      "description": "Invalid nested subcommand is rejected",
+      "duration_seconds": 0.056,
+      "expected_result": "fail",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-VALIDATION-002",
+        "nist": "SI-10"
+      },
+      "test_id": "BL-071"
+    },
+    {
+      "actual_result": "fail",
+      "category": "environment-override",
+      "description": "Host safety violation without flag",
+      "duration_seconds": 0.055,
+      "expected_result": "fail",
+      "pass_fail": "FAIL",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-019",
+        "nist": "CM-7"
+      },
+      "test_id": "BL-080"
+    },
+    {
+      "actual_result": "pass",
+      "category": "environment-override",
+      "description": "Host safety override requires both env and flag",
+      "duration_seconds": 0.057,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-019",
+        "nist": "CM-7"
+      },
+      "test_id": "BL-081"
+    },
+    {
+      "actual_result": "pass",
+      "category": "ascii-compliance",
+      "description": "Version output is ASCII-only",
+      "duration_seconds": 0.057,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "OUTPUT-ASCII-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-090"
+    },
+    {
+      "actual_result": "pass",
+      "category": "ascii-compliance",
+      "description": "Authz output is ASCII-only",
+      "duration_seconds": 0.052,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "OUTPUT-ASCII-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-091"
+    },
+    {
+      "actual_result": "pass",
+      "category": "evidence-trail",
+      "description": "Authz decisions include evidence ID",
+      "duration_seconds": 0.051,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-008",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-100"
+    },
+    {
+      "actual_result": "pass",
+      "category": "evidence-trail",
+      "description": "Authz decisions include timestamp",
+      "duration_seconds": 0.056,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-011",
+        "nist": "AU-8"
+      },
+      "test_id": "BL-101"
+    },
+    {
+      "actual_result": "pass",
+      "category": "determinism",
+      "description": "Policy evaluation is deterministic",
+      "duration_seconds": 0.055,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "POLICY-DETERMINISM-001",
+        "nist": "SC-5"
+      },
+      "test_id": "BL-110"
+    }
+  ],
+  "timestamp_utc": "2026-02-01T211229Z"
+}

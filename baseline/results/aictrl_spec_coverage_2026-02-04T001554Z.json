@@ -1,0 +1,382 @@
+{
+  "baseline_name": "AICtrl 1.0.x Baseline Test",
+  "baseline_version": "1.0",
+  "coverage_type": "aictrl-spec-coverage",
+  "federal_policies": {
+    "EO-14110-4.1": {
+      "control_id": "EO-14110-4.1",
+      "coverage_status": "COVERED",
+      "test_count": 7,
+      "test_ids": [
+        "BL-001",
+        "BL-002",
+        "BL-003",
+        "BL-070",
+        "BL-071",
+        "BL-090",
+        "BL-091"
+      ]
+    },
+    "EO-14110-4.2": {
+      "control_id": "EO-14110-4.2",
+      "coverage_status": "COVERED",
+      "test_count": 5,
+      "test_ids": [
+        "BL-004",
+        "BL-012",
+        "BL-020",
+        "BL-021",
+        "BL-110"
+      ]
+    },
+    "EO-14110-4.3": {
+      "control_id": "EO-14110-4.3",
+      "coverage_status": "COVERED",
+      "test_count": 6,
+      "test_ids": [
+        "BL-031",
+        "BL-050",
+        "BL-060",
+        "BL-061",
+        "BL-100",
+        "BL-101"
+      ]
+    },
+    "EO-14110-4.5": {
+      "control_id": "EO-14110-4.5",
+      "coverage_status": "COVERED",
+      "test_count": 11,
+      "test_ids": [
+        "BL-010",
+        "BL-011",
+        "BL-013",
+        "BL-014",
+        "BL-030",
+        "BL-032",
+        "BL-040",
+        "BL-041",
+        "BL-042",
+        "BL-080",
+        "BL-081"
+      ]
+    }
+  },
+  "generated_at_utc": "2026-02-04T001556Z",
+  "internal_invariants": {
+    "AUTHZ-ENFORCEMENT-001": {
+      "control_id": "AUTHZ-ENFORCEMENT-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-020"
+      ]
+    },
+    "AUTHZ-POLICY-001": {
+      "control_id": "AUTHZ-POLICY-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-021"
+      ]
+    },
+    "CLI-SURFACE-001": {
+      "control_id": "CLI-SURFACE-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-001"
+      ]
+    },
+    "CLI-SURFACE-002": {
+      "control_id": "CLI-SURFACE-002",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-002"
+      ]
+    },
+    "CLI-SURFACE-003": {
+      "control_id": "CLI-SURFACE-003",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-003"
+      ]
+    },
+    "CLI-SURFACE-004": {
+      "control_id": "CLI-SURFACE-004",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-004"
+      ]
+    },
+    "CLI-VALIDATION-001": {
+      "control_id": "CLI-VALIDATION-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-070"
+      ]
+    },
+    "CLI-VALIDATION-002": {
+      "control_id": "CLI-VALIDATION-002",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-071"
+      ]
+    },
+    "EXEC-BOUNDARY-001": {
+      "control_id": "EXEC-BOUNDARY-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-040"
+      ]
+    },
+    "EXEC-INSPECT-001": {
+      "control_id": "EXEC-INSPECT-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-031"
+      ]
+    },
+    "EXEC-READY-001": {
+      "control_id": "EXEC-READY-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-050"
+      ]
+    },
+    "INV-004": {
+      "control_id": "INV-004",
+      "coverage_status": "COVERED",
+      "test_count": 5,
+      "test_ids": [
+        "BL-013",
+        "BL-014",
+        "BL-030",
+        "BL-032",
+        "BL-041"
+      ]
+    },
+    "INV-005": {
+      "control_id": "INV-005",
+      "coverage_status": "COVERED",
+      "test_count": 2,
+      "test_ids": [
+        "BL-011",
+        "BL-042"
+      ]
+    },
+    "INV-008": {
+      "control_id": "INV-008",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-100"
+      ]
+    },
+    "INV-011": {
+      "control_id": "INV-011",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-101"
+      ]
+    },
+    "INV-016": {
+      "control_id": "INV-016",
+      "coverage_status": "COVERED",
+      "test_count": 3,
+      "test_ids": [
+        "BL-010",
+        "BL-060",
+        "BL-061"
+      ]
+    },
+    "INV-019": {
+      "control_id": "INV-019",
+      "coverage_status": "COVERED",
+      "test_count": 2,
+      "test_ids": [
+        "BL-080",
+        "BL-081"
+      ]
+    },
+    "OUTPUT-ASCII-001": {
+      "control_id": "OUTPUT-ASCII-001",
+      "coverage_status": "COVERED",
+      "test_count": 2,
+      "test_ids": [
+        "BL-090",
+        "BL-091"
+      ]
+    },
+    "POLICY-DETERMINISM-001": {
+      "control_id": "POLICY-DETERMINISM-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-110"
+      ]
+    },
+    "POLICY-SANDBOX-001": {
+      "control_id": "POLICY-SANDBOX-001",
+      "coverage_status": "COVERED",
+      "test_count": 1,
+      "test_ids": [
+        "BL-012"
+      ]
+    }
+  },
+  "nist_controls": {
+    "AC-3": {
+      "control_id": "AC-3",
+      "coverage_status": "FULL",
+      "test_count": 3,
+      "test_ids": [
+        "BL-010",
+        "BL-011",
+        "BL-012"
+      ]
+    },
+    "AC-3(7)": {
+      "control_id": "AC-3(7)",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-020",
+        "BL-042"
+      ]
+    },
+    "AC-6": {
+      "control_id": "AC-6",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-013",
+        "BL-014"
+      ]
+    },
+    "AC-6(9)": {
+      "control_id": "AC-6(9)",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-030",
+        "BL-032"
+      ]
+    },
+    "AU-3": {
+      "control_id": "AU-3",
+      "coverage_status": "FULL",
+      "test_count": 3,
+      "test_ids": [
+        "BL-090",
+        "BL-091",
+        "BL-100"
+      ]
+    },
+    "AU-8": {
+      "control_id": "AU-8",
+      "coverage_status": "PARTIAL",
+      "test_count": 1,
+      "test_ids": [
+        "BL-101"
+      ]
+    },
+    "CA-7": {
+      "control_id": "CA-7",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-050",
+        "BL-061"
+      ]
+    },
+    "CA-8": {
+      "control_id": "CA-8",
+      "coverage_status": "PARTIAL",
+      "test_count": 1,
+      "test_ids": [
+        "BL-031"
+      ]
+    },
+    "CM-7": {
+      "control_id": "CM-7",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-080",
+        "BL-081"
+      ]
+    },
+    "GV.PO-1": {
+      "control_id": "GV.PO-1",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-004",
+        "BL-021"
+      ]
+    },
+    "ID.AM-2": {
+      "control_id": "ID.AM-2",
+      "coverage_status": "FULL",
+      "test_count": 3,
+      "test_ids": [
+        "BL-001",
+        "BL-002",
+        "BL-003"
+      ]
+    },
+    "SC-5": {
+      "control_id": "SC-5",
+      "coverage_status": "PARTIAL",
+      "test_count": 1,
+      "test_ids": [
+        "BL-110"
+      ]
+    },
+    "SC-7": {
+      "control_id": "SC-7",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-040",
+        "BL-041"
+      ]
+    },
+    "SI-10": {
+      "control_id": "SI-10",
+      "coverage_status": "FULL",
+      "test_count": 2,
+      "test_ids": [
+        "BL-070",
+        "BL-071"
+      ]
+    },
+    "SI-17": {
+      "control_id": "SI-17",
+      "coverage_status": "PARTIAL",
+      "test_count": 1,
+      "test_ids": [
+        "BL-060"
+      ]
+    }
+  },
+  "schema_version": "1.0",
+  "summary": {
+    "federal_policies_covered": 4,
+    "internal_invariants_covered": 20,
+    "nist_full": 11,
+    "nist_none": 0,
+    "nist_partial": 4,
+    "nist_total": 15,
+    "total_tests": 29
+  }
+}

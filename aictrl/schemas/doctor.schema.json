@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aios.dev/schemas/bbail/doctor.schema.json",
+  "title": "bbail doctor output",
+  "description": "Schema for bbail doctor command output",
+  "type": "object",
+  "required": ["timestamp_utc", "overall_status", "summary", "checks"],
+  "properties": {
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of when doctor ran"
+    },
+    "overall_status": {
+      "type": "string",
+      "enum": ["pass", "warn", "fail"],
+      "description": "Overall health status"
+    },
+    "summary": {
+      "type": "object",
+      "required": ["passed", "warned", "failed", "total"],
+      "properties": {
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of checks that passed"
+        },
+        "warned": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of checks with warnings"
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of checks that failed"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of checks run"
+        }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "status", "evidence"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for this check"
+          },
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of what is being checked"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pass", "warn", "fail"],
+            "description": "Check result status"
+          },
+          "evidence": {
+            "type": "string",
+            "description": "Evidence or details supporting the status"
+          },
+          "remediation": {
+            "type": ["string", "null"],
+            "description": "Suggested remediation action if status is not pass"
+          }
+        }
+      }
+    }
+  }
+}

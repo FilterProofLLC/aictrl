@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "manifest_version": "1.0",
+  "baseline_name": "AICtrl 1.0.x Baseline Test",
+  "baseline_version": "1.1.0",
+  "schema_version": "1.1",
+  "target_aictrl_version": "1.0.2",
+  "description": "Canonical baseline tests for AICtrl CLI governance and safety guarantees. These tests represent durable compliance artifacts for audits.",
+  "expected_fail_test_ids": [
+    "BL-080"
+  ],
+  "artifact_filenames": {
+    "ascii_report": "aictrl-baseline-report.txt",
+    "json_attestation": "aictrl-baseline-attestation.json",
+    "spec_coverage": "aictrl-spec-coverage.txt",
+    "spec_coverage_json": "aictrl-spec-coverage.json",
+    "digest": "aictrl-baseline.digest.txt",
+    "manifest": "aictrl-baseline-manifest.json",
+    "attestation_signature": "aictrl-baseline-attestation.json.sig",
+    "digest_signature": "aictrl-baseline.digest.txt.sig"
+  },
+  "test_categories": {
+    "BL-001 to BL-009": "CLI surface introspection",
+    "BL-010 to BL-019": "Authorization policy (deny-by-default)",
+    "BL-020 to BL-029": "Authorization enforcement points",
+    "BL-030 to BL-039": "Adapter inspection (AI prohibition)",
+    "BL-040 to BL-049": "Boundary inspection (AI cannot cross)",
+    "BL-050 to BL-059": "Execution readiness",
+    "BL-060 to BL-069": "Safe failure modes",
+    "BL-070 to BL-079": "Invalid input rejection",
+    "BL-080 to BL-089": "Environment override tests",
+    "BL-090 to BL-099": "ASCII output compliance",
+    "BL-100 to BL-109": "Evidence and audit trail",
+    "BL-110 to BL-119": "Determinism verification"
+  },
+  "summary": {
+    "total_tests": 29,
+    "expected_pass": 28,
+    "expected_fail": 1,
+    "expected_fail_note": "BL-080 tests host safety violation detection (must fail to pass baseline)",
+    "pass_criteria": "PASS when unexpected_failures == 0",
+    "nist_controls_covered": 14,
+    "internal_invariants_covered": 22,
+    "federal_policies_covered": 5
+  },
+  "spec_frameworks": {
+    "nist": "NIST AI RMF / SP 800-53",
+    "internal": "AICtrl Internal Invariants (INV-xxx, CLI-xxx)",
+    "federal": "Executive Order 14110"
+  }
+}

@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filterproof.io/schemas/aictrl-baseline-attestation-v1.1.json",
+  "title": "AICtrl Baseline Attestation",
+  "description": "Schema for AICtrl baseline test attestation artifacts (schema version 1.1)",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "attestation_type",
+    "baseline_name",
+    "baseline_version",
+    "aictrl_version",
+    "timestamp_utc",
+    "execution_context",
+    "provenance",
+    "host_metadata",
+    "summary",
+    "test_results"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.1",
+      "description": "Schema version for this attestation format"
+    },
+    "attestation_type": {
+      "type": "string",
+      "const": "aictrl-baseline-result",
+      "description": "Type identifier for this attestation"
+    },
+    "baseline_name": {
+      "type": "string",
+      "description": "Name of the baseline test suite"
+    },
+    "baseline_version": {
+      "type": "string",
+      "description": "Version of the baseline test definition"
+    },
+    "aictrl_version": {
+      "type": "string",
+      "description": "Version of the aictrl CLI under test"
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{6}Z$",
+      "description": "UTC timestamp of test execution in format YYYY-MM-DDTHHMMSSZ"
+    },
+    "execution_context": {
+      "type": "string",
+      "enum": ["local", "github-actions", "gitlab-ci", "ci-unknown"],
+      "description": "Environment where tests were executed"
+    },
+    "provenance": {
+      "type": "object",
+      "description": "Git and execution provenance metadata",
+      "required": ["execution_environment"],
+      "properties": {
+        "git_commit": {
+          "type": ["string", "null"],
+          "pattern": "^[a-f0-9]{40}$|^$",
+          "description": "Full git commit SHA"
+        },
+        "git_branch": {
+          "type": ["string", "null"],
+          "description": "Git branch name"
+        },
+        "repository_url": {
+          "type": ["string", "null"],
+          "description": "Repository URL"
+        },
+        "ci_run_id": {
+          "type": ["string", "null"],
+          "description": "CI system run identifier"
+        },
+        "execution_environment": {
+          "type": "string",
+          "description": "Execution environment type"
+        },
+        "python_version": {
+          "type": ["string", "null"],
+          "description": "Python version used"
+        },
+        "platform": {
+          "type": ["string", "null"],
+          "description": "Platform identifier"
+        }
+      }
+    },
+    "host_metadata": {
+      "type": "object",
+      "description": "Host system metadata",
+      "properties": {
+        "python_version": {
+          "type": ["string", "null"],
+          "description": "Python version"
+        },
+        "platform": {
+          "type": ["string", "null"],
+          "description": "Platform identifier"
+        },
+        "hostname": {
+          "type": ["string", "null"],
+          "description": "Host name"
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Test execution summary",
+      "required": [
+        "total_tests",
+        "passed",
+        "failed",
+        "expected_failures",
+        "unexpected_failures",
+        "overall_result"
+      ],
+      "properties": {
+        "total_tests": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Total number of tests executed"
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tests that passed"
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tests that failed"
+        },
+        "expected_failures": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of tests expected to fail"
+        },
+        "unexpected_failures": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Number of unexpected test failures"
+        },
+        "overall_result": {
+          "type": "string",
+          "enum": ["PASS", "FAIL"],
+          "description": "Overall baseline result"
+        }
+      }
+    },
+    "test_results": {
+      "type": "array",
+      "description": "Individual test results",
+      "items": {
+        "type": "object",
+        "required": [
+          "test_id",
+          "description",
+          "category",
+          "expected_result",
+          "actual_result",
+          "pass_fail",
+          "duration_seconds",
+          "spec_mappings"
+        ],
+        "properties": {
+          "test_id": {
+            "type": "string",
+            "pattern": "^BL-[0-9]{3}$",
+            "description": "Test identifier"
+          },
+          "description": {
+            "type": "string",
+            "description": "Test description"
+          },
+          "category": {
+            "type": "string",
+            "description": "Test category"
+          },
+          "expected_result": {
+            "type": "string",
+            "enum": ["pass", "fail"],
+            "description": "Expected test outcome"
+          },
+          "actual_result": {
+            "type": "string",
+            "enum": ["pass", "fail"],
+            "description": "Actual test outcome"
+          },
+          "pass_fail": {
+            "type": "string",
+            "enum": ["PASS", "FAIL"],
+            "description": "Pass/fail indicator"
+          },
+          "duration_seconds": {
+            "type": "number",
+            "minimum": 0,
+            "description": "Test execution duration in seconds"
+          },
+          "spec_mappings": {
+            "type": "object",
+            "description": "Specification mappings",
+            "properties": {
+              "internal": {
+                "type": ["string", "null"],
+                "description": "Internal invariant reference"
+              },
+              "nist": {
+                "type": ["string", "null"],
+                "description": "NIST AI RMF control reference"
+              },
+              "federal": {
+                "type": ["string", "null"],
+                "description": "Federal policy reference"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
