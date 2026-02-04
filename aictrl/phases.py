@@ -13,8 +13,9 @@ from typing import Any
 # Phase 9: MVP crypto (Ed25519 signing/verification)
 # Phase 10: Real boot measurement (read-only TPM/IMA)
 # Phase 11: Signed attestation only. No enforcement.
-# Phase 12+: Future (exec enforcement, authz enforcement)
-CURRENT_PHASE = 11
+# Phase 12: Controlled execution proposal/review (no execution)
+# Phase 13+: Future (exec run, authz enforcement)
+CURRENT_PHASE = 12
 
 # Capability definitions: each capability is enabled at a specific phase
 # Format: capability_name -> (min_phase, description)
@@ -41,9 +42,13 @@ CAPABILITY_DEFINITIONS = {
     "attest_signed": (11, "Generate signed attestation statements (requires --dangerous)"),
     "attest_verify_signature": (11, "Verify attestation signature with explicit pubkey"),
 
-    # Phase 12+ capabilities (future)
-    "exec_controlled": (12, "Controlled execution with human gate"),
-    "authz_enforceable": (13, "Enforceable authorization with policy signatures"),
+    # Phase 12 capabilities (exec propose/review - no execution)
+    "exec_propose": (12, "Create execution proposals (no side effects)"),
+    "exec_review": (12, "Review execution proposals (read-only)"),
+
+    # Phase 13+ capabilities (future)
+    "exec_run": (13, "Execute approved proposals with human gate"),
+    "authz_enforceable": (14, "Enforceable authorization with policy signatures"),
 }
 
 

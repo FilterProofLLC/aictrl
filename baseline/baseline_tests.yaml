@@ -659,3 +659,76 @@ tests:
       nist: "SC-12"
       federal: "EO-14110-4.2"
     notes: "Signed attestation requires explicit --dangerous flag as safety gate."
+
+  # ============================================================================
+  # Controlled Execution Propose/Review (Phase 12 Part 1)
+  # ============================================================================
+  - id: "BL-220"
+    title: "Propose creates valid JSON with content_hash and status=proposed"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl220-proposal.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl220-proposal.json && cat /tmp/aictrl-bl220-proposal.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"status": "proposed"'
+        - '"content_hash"'
+        - '"proposal_id"'
+        - '"phase": 12'
+      ascii_only: true
+    spec:
+      internal: "EXEC-PROPOSE-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Propose creates valid proposal JSON with hash and status."
+
+  - id: "BL-221"
+    title: "Propose without --dangerous fails for dangerous adapter"
+    command: ["python", "-m", "aictrl", "exec", "propose",
+              "--action", "write", "--target", "/tmp/test.txt",
+              "--adapter", "file-write", "--out", "/tmp/aictrl-bl221.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - 'requires --dangerous'
+        - '"error_code": "AICTRL-9003"'
+      ascii_only: true
+    spec:
+      internal: "EXEC-DANGEROUS-GATE-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Dangerous adapters require explicit --dangerous flag."
+
+  - id: "BL-222"
+    title: "Review detects tampered proposal (hash mismatch)"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl222-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl222-proposal.json 2>/dev/null && sed 's/\\/etc\\/hosts/\\/etc\\/passwd/' /tmp/aictrl-bl222-proposal.json > /tmp/aictrl-bl222-tampered.json && python -m aictrl exec review --proposal /tmp/aictrl-bl222-tampered.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"valid": false'
+        - '"error_code": "AICTRL-9006"'
+        - 'hash mismatch'
+      ascii_only: true
+    spec:
+      internal: "EXEC-TAMPER-DETECT-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Review detects content tampering via hash verification."
+
+  - id: "BL-223"
+    title: "Review of valid proposal succeeds with proposal_id"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl223-proposal.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl223-proposal.json 2>/dev/null && python -m aictrl exec review --proposal /tmp/aictrl-bl223-proposal.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"valid": true'
+        - '"proposal_id"'
+        - '"hash_verified": true'
+      ascii_only: true
+    spec:
+      internal: "EXEC-REVIEW-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Valid proposal review succeeds with verified hash."

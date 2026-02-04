@@ -711,6 +711,90 @@ def cmd_exec_readiness(args) -> int:
         return EXIT_FAILURE
 
 
+def cmd_exec_propose(args) -> int:
+    """Handle exec propose command.
+
+    Phase 12 Part 1: Create execution proposal.
+    This command:
+    - Has NO side effects except writing to explicit --out path
+    - Validates adapter against allowlist (default deny)
+    - Requires --dangerous for dangerous adapters/actions
+    - NEVER executes anything
+    """
+    from .commands.exec import create_proposal
+
+    pretty = getattr(args, "pretty", True)
+
+    # Parse inputs JSON if provided
+    inputs = None
+    if args.inputs:
+        try:
+            inputs = json.loads(args.inputs)
+        except json.JSONDecodeError as e:
+            output_json({
+                "success": False,
+                "error": f"Invalid JSON in --inputs: {e}",
+                "hint": "Provide valid JSON object for --inputs",
+                "exit_code": 1,
+            }, pretty=pretty)
+            return EXIT_FAILURE
+
+    try:
+        result = create_proposal(
+            action=args.action,
+            target=args.target,
+            adapter=args.adapter,
+            subject=getattr(args, "subject", None),
+            inputs=inputs,
+            dangerous=getattr(args, "dangerous", False),
+            out_path=args.out,
+            overwrite=getattr(args, "overwrite", False),
+        )
+        output_json(result, pretty=pretty)
+
+        # Return appropriate exit code
+        if result.get("success"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"success": False, "error": str(e), "exit_code": 1}, pretty=pretty)
+        return EXIT_FAILURE
+
+
+def cmd_exec_review(args) -> int:
+    """Handle exec review command.
+
+    Phase 12 Part 1: Review execution proposal (read-only).
+    This command:
+    - NEVER modifies the proposal file
+    - Validates content hash for tamper detection
+    - Returns structured summary
+    """
+    from .commands.exec import review_proposal
+
+    pretty = getattr(args, "pretty", True)
+
+    try:
+        result = review_proposal(proposal_path=args.proposal)
+        output_json(result, pretty=pretty)
+
+        # Return appropriate exit code
+        if result.get("success") and result.get("valid"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"success": False, "error": str(e), "exit_code": 1}, pretty=pretty)
+        return EXIT_FAILURE
+
+
 def cmd_demo(args) -> int:
     """Handle demo command.
 
@@ -1394,10 +1478,10 @@ def create_parser() -> argparse.ArgumentParser:
         help="Pretty-print JSON output",
     )
 
-    # exec command (INSPECTION ONLY - no execution)
+    # exec command (Phase 12: propose/review added, still NO execution)
     exec_parser = subparsers.add_parser(
         "exec",
-        help="Execution inspection (INSPECTION ONLY - no real execution)",
+        help="Execution proposal/review (Phase 12: NO execution, propose and review only)",
     )
     exec_subparsers = exec_parser.add_subparsers(dest="exec_command")
 
@@ -1434,6 +1518,83 @@ def create_parser() -> argparse.ArgumentParser:
         help="Optional execution request ID to check",
     )
     exec_readiness_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    # Phase 12 Part 1: propose and review (NO execution)
+    exec_propose_parser = exec_subparsers.add_parser(
+        "propose",
+        help="Create execution proposal (Phase 12: NO side effects except --out file)",
+    )
+    exec_propose_parser.add_argument(
+        "--action",
+        type=str,
+        required=True,
+        help="Action verb (read, write, execute, etc.)",
+    )
+    exec_propose_parser.add_argument(
+        "--target",
+        type=str,
+        required=True,
+        help="Target resource path or identifier",
+    )
+    exec_propose_parser.add_argument(
+        "--adapter",
+        type=str,
+        required=True,
+        help="Adapter name (noop, file-read, file-write, shell-readonly, shell-execute)",
+    )
+    exec_propose_parser.add_argument(
+        "--subject",
+        type=str,
+        default=None,
+        help="Optional subject identifier",
+    )
+    exec_propose_parser.add_argument(
+        "--inputs",
+        type=str,
+        default=None,
+        help="JSON object with adapter-specific inputs",
+    )
+    exec_propose_parser.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        help="Output path for proposal JSON (required)",
+    )
+    exec_propose_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrite existing output file",
+    )
+    exec_propose_parser.add_argument(
+        "--dangerous",
+        action="store_true",
+        default=False,
+        help="Required for dangerous adapters/actions",
+    )
+    exec_propose_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    exec_review_parser = exec_subparsers.add_parser(
+        "review",
+        help="Review execution proposal (Phase 12: read-only, validates hash)",
+    )
+    exec_review_parser.add_argument(
+        "--proposal",
+        type=str,
+        required=True,
+        help="Path to proposal JSON file",
+    )
+    exec_review_parser.add_argument(
         "--pretty",
         action="store_true",
         default=True,
@@ -1569,6 +1730,10 @@ def main(argv=None) -> int:
             return cmd_exec_boundary(args)
         elif args.exec_command == "readiness":
             return cmd_exec_readiness(args)
+        elif args.exec_command == "propose":
+            return cmd_exec_propose(args)
+        elif args.exec_command == "review":
+            return cmd_exec_review(args)
         else:
             # Default to adapters if no subcommand
             args.pretty = True
