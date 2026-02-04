@@ -11,8 +11,9 @@ from typing import Any
 # Current phase of AICtrl
 # Phase 8: Design complete, no crypto ops
 # Phase 9: MVP crypto (Ed25519 signing/verification)
-# Phase 10+: Future (boot, attest, exec enforcement)
-CURRENT_PHASE = 9
+# Phase 10: Real boot measurement (read-only TPM/IMA)
+# Phase 11+: Future (signed attestation, exec enforcement)
+CURRENT_PHASE = 10
 
 # Capability definitions: each capability is enabled at a specific phase
 # Format: capability_name -> (min_phase, description)
@@ -31,8 +32,11 @@ CAPABILITY_DEFINITIONS = {
     "crypto_verify": (9, "Verify Ed25519 signatures"),
     "crypto_pubkey": (9, "Derive public key from private key"),
 
-    # Phase 10+ capabilities (future)
-    "boot_real_tpm": (10, "Read real TPM measurements"),
+    # Phase 10 capabilities (real boot measurement)
+    "boot_real_measurement": (10, "Read real boot measurements (IMA)"),
+    "boot_policy_verify": (10, "Verify boot log against policy"),
+
+    # Phase 11+ capabilities (future)
     "attest_signed": (11, "Generate signed attestation statements"),
     "exec_controlled": (12, "Controlled execution with human gate"),
     "authz_enforceable": (13, "Enforceable authorization with policy signatures"),
