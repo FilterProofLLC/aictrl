@@ -1,6 +1,6 @@
 """AICtrl - Portable AI Control Plane CLI."""
 
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 
 # Build metadata for watermarking (non-secret, traceable)
 __build_timestamp__ = None  # Set at build time
