@@ -41,6 +41,7 @@ from .commands.exec import (
     get_boundary_info,
     get_readiness_info,
 )
+from .commands.demo import run_demo
 from .util.errors import EXIT_SUCCESS, EXIT_FAILURE, EXIT_USAGE_ERROR, AICtrlError
 from .util.json_utils import output_json
 from .util.safe_exec import (
@@ -553,6 +554,36 @@ def cmd_exec_readiness(args) -> int:
         return EXIT_FAILURE
 
 
+def cmd_demo(args) -> int:
+    """Handle demo command.
+
+    Runs the AICtrl baseline as a polished, client-facing demonstration.
+    This command is:
+    - Read-only with respect to host safety (no privileged actions)
+    - Deterministic and offline-safe
+    - Produces ASCII-only output in reports
+    """
+    try:
+        result = run_demo(
+            output_dir=getattr(args, "out", None),
+            quick=getattr(args, "quick", False),
+            verbose=True,
+        )
+
+        if result.get("success"):
+            return EXIT_SUCCESS
+        else:
+            if result.get("error"):
+                print(f"Error: {result['error']}")
+            return EXIT_FAILURE
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=True)
+        return EXIT_FAILURE
+    except Exception as e:
+        print(f"Error: {e}")
+        return EXIT_FAILURE
+
+
 def create_parser() -> argparse.ArgumentParser:
     """Create the argument parser."""
     parser = argparse.ArgumentParser(
@@ -607,6 +638,23 @@ def create_parser() -> argparse.ArgumentParser:
         "--pretty",
         action="store_true",
         help="Pretty-print JSON output",
+    )
+
+    # demo command
+    demo_parser = subparsers.add_parser(
+        "demo",
+        help="Run baseline demo with artifacts and verification instructions",
+    )
+    demo_parser.add_argument(
+        "--quick",
+        action="store_true",
+        help="Quick mode: suppress verbose per-test output",
+    )
+    demo_parser.add_argument(
+        "--out",
+        type=str,
+        default=None,
+        help="Output directory for artifacts (default: baseline/results/demo_<timestamp>)",
     )
 
     # doctor command
@@ -1118,6 +1166,8 @@ def main(argv=None) -> int:
         return cmd_version(args)
     elif args.command == "status":
         return cmd_status(args)
+    elif args.command == "demo":
+        return cmd_demo(args)
     elif args.command == "doctor":
         return cmd_doctor(args)
     elif args.command == "support-bundle":
