@@ -6,6 +6,8 @@ import socket
 from datetime import datetime, timezone
 from typing import Any
 
+from ..phases import get_phase_info
+
 
 def get_status() -> dict[str, Any]:
     """Collect system status information.
@@ -37,8 +39,13 @@ def get_status() -> dict[str, Any]:
     # Network information
     network = _get_network_info(notes)
 
+    # Phase/capability information
+    phase_info = get_phase_info()
+
     return {
         "timestamp_utc": timestamp_utc,
+        "phase": phase_info["current_phase"],
+        "enabled_capabilities": phase_info["enabled_capabilities"],
         "host": host,
         "os": os_info,
         "resources": resources,

@@ -600,6 +600,16 @@ def run_test(test: dict) -> dict:
     if command and command[0] == "python":
         command[0] = sys.executable
 
+    # Also replace "python" in bash -c scripts
+    if command and len(command) >= 3 and command[0] == "bash" and command[1] == "-c":
+        script = command[2]
+        # Replace "python -m" at word boundary (not after /)
+        # Simple approach: only replace if not already replaced
+        if sys.executable not in script:
+            script = script.replace("python3 -m ", f"{sys.executable} -m ")
+            script = script.replace("python -m ", f"{sys.executable} -m ")
+        command[2] = script
+
     # Build environment
     env = os.environ.copy()
     env.update(env_overrides)
@@ -1084,7 +1094,17 @@ def generate_report(baseline: dict, results: list, host_meta: dict, timestamp: s
     baseline_info = baseline.get("baseline", {})
     lines.append(f"Baseline Name:    {baseline_info.get('name', 'unknown')}")
     lines.append(f"Baseline Version: {baseline_info.get('version', 'unknown')}")
-    lines.append(f"Target Version:   {baseline_info.get('target_version', 'unknown')}")
+    lines.append(f"Min Required:     {baseline_info.get('min_version', '>= 1.0.0')}")
+
+    # Extract runtime version from host_meta (which contains JSON string)
+    runtime_version = "unknown"
+    try:
+        import json as _json
+        version_data = _json.loads(host_meta.get('aictrl_version', '{}'))
+        runtime_version = version_data.get('version', 'unknown')
+    except Exception:
+        runtime_version = host_meta.get('aictrl_version', 'unknown')
+    lines.append(f"Runtime Version:  {runtime_version}")
     lines.append(f"Timestamp (UTC):  {timestamp}")
     lines.append("")
 
@@ -1212,6 +1232,9 @@ def generate_report(baseline: dict, results: list, host_meta: dict, timestamp: s
 
     # Footer
     lines.append("")
+    lines.append("=" * 80)
+    lines.append("Milestone: Demo-ready (evidence-complete). Not feature-complete.")
+    lines.append("See docs/milestones/DEMO_READY.md for milestone definition.")
     lines.append("=" * 80)
     lines.append("End of Report")
     lines.append("=" * 80)

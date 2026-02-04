@@ -4,7 +4,8 @@
   "baseline_name": "AICtrl 1.0.x Baseline Test",
   "baseline_version": "1.1.0",
   "schema_version": "1.1",
-  "target_aictrl_version": "1.0.2",
+  "min_aictrl_version": ">= 1.0.0",
+  "min_version_note": "Minimum AICtrl version required; runtime version captured in attestation",
   "description": "Canonical baseline tests for AICtrl CLI governance and safety guarantees. These tests represent durable compliance artifacts for audits.",
   "expected_fail_test_ids": [
     "BL-080"
@@ -31,11 +32,12 @@
     "BL-080 to BL-089": "Environment override tests",
     "BL-090 to BL-099": "ASCII output compliance",
     "BL-100 to BL-109": "Evidence and audit trail",
-    "BL-110 to BL-119": "Determinism verification"
+    "BL-110 to BL-119": "Determinism verification",
+    "BL-120 to BL-129": "Cryptographic operations (Phase 9)"
   },
   "summary": {
-    "total_tests": 29,
-    "expected_pass": 28,
+    "total_tests": 33,
+    "expected_pass": 32,
     "expected_fail": 1,
     "expected_fail_note": "BL-080 tests host safety violation detection (must fail to pass baseline)",
     "pass_criteria": "PASS when unexpected_failures == 0",

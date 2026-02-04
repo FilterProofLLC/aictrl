@@ -27,6 +27,10 @@ from .commands.crypto import (
     get_crypto_status,
     get_crypto_readiness,
     get_crypto_algorithms,
+    generate_keypair,
+    derive_public_key,
+    sign_file,
+    verify_signature,
 )
 from .commands.authz import (
     check_authorization,
@@ -42,6 +46,7 @@ from .commands.exec import (
     get_readiness_info,
 )
 from .commands.demo import run_demo
+from .phases import get_current_phase, get_enabled_capabilities
 from .util.errors import EXIT_SUCCESS, EXIT_FAILURE, EXIT_USAGE_ERROR, AICtrlError
 from .util.json_utils import output_json
 from .util.safe_exec import (
@@ -72,11 +77,13 @@ def cmd_version(args) -> int:
     data = {
         "name": "aictrl",
         "version": __version__,
+        "phase": get_current_phase(),
         "commit": get_git_commit(),
         # Build watermarking (non-secret, traceable metadata)
         "build_timestamp": __build_timestamp__ or datetime.now(timezone.utc).isoformat(),
         "build_id": __build_id__,
         "product": "AICtrl - Portable AI Control Plane",
+        "enabled_capabilities": list(get_enabled_capabilities().keys()),
     }
     output_json(data, pretty=getattr(args, "pretty", False))
     return EXIT_SUCCESS
@@ -401,14 +408,106 @@ def cmd_crypto_readiness(args) -> int:
 def cmd_crypto_algorithms(args) -> int:
     """Handle crypto algorithms command.
 
-    DESIGN DOCUMENTATION ONLY - no cryptographic operations.
-    This is Phase 8 (Design Only) - algorithm support is design only.
+    Reports algorithm support information.
     """
     pretty = getattr(args, "pretty", True)
     try:
         result = get_crypto_algorithms()
         output_json(result, pretty=pretty)
         return EXIT_SUCCESS
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"error": str(e)}, pretty=pretty)
+        return EXIT_FAILURE
+
+
+def cmd_crypto_keygen(args) -> int:
+    """Handle crypto keygen command.
+
+    Generates an Ed25519 keypair. Requires --dangerous flag.
+    """
+    pretty = getattr(args, "pretty", True)
+    try:
+        result = generate_keypair(
+            output_path=args.out,
+            dangerous=getattr(args, "dangerous", False),
+            force=getattr(args, "force", False),
+        )
+        output_json(result, pretty=pretty)
+        if result.get("success"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"error": str(e)}, pretty=pretty)
+        return EXIT_FAILURE
+
+
+def cmd_crypto_pubkey(args) -> int:
+    """Handle crypto pubkey command.
+
+    Derives public key from private key.
+    """
+    pretty = getattr(args, "pretty", True)
+    try:
+        result = derive_public_key(
+            key_path=args.key,
+            output_path=args.out,
+        )
+        output_json(result, pretty=pretty)
+        if result.get("success"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"error": str(e)}, pretty=pretty)
+        return EXIT_FAILURE
+
+
+def cmd_crypto_sign(args) -> int:
+    """Handle crypto sign command.
+
+    Signs a file with Ed25519.
+    """
+    pretty = getattr(args, "pretty", True)
+    try:
+        result = sign_file(
+            key_path=args.key,
+            input_path=getattr(args, "input", None) or args.file,
+            output_path=args.out,
+        )
+        output_json(result, pretty=pretty)
+        if result.get("success"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"error": str(e)}, pretty=pretty)
+        return EXIT_FAILURE
+
+
+def cmd_crypto_verify(args) -> int:
+    """Handle crypto verify command.
+
+    Verifies an Ed25519 signature.
+    """
+    pretty = getattr(args, "pretty", True)
+    try:
+        result = verify_signature(
+            pubkey_path=args.pubkey,
+            input_path=getattr(args, "input", None) or args.file,
+            sig_path=args.sig,
+        )
+        output_json(result, pretty=pretty)
+        return result.get("exit_code", EXIT_FAILURE)
     except AICtrlError as e:
         output_json(e.to_dict(), pretty=pretty)
         return EXIT_FAILURE
@@ -978,16 +1077,16 @@ def create_parser() -> argparse.ArgumentParser:
         help="Pretty-print JSON output",
     )
 
-    # crypto command (DESIGN ONLY - no cryptographic operations)
+    # crypto command - Phase 9 MVP cryptographic operations
     crypto_parser = subparsers.add_parser(
         "crypto",
-        help="Cryptographic readiness reporting (DESIGN ONLY - no crypto operations)",
+        help="Cryptographic operations (Phase 9: Ed25519 signing/verification)",
     )
     crypto_subparsers = crypto_parser.add_subparsers(dest="crypto_command")
 
     crypto_status_parser = crypto_subparsers.add_parser(
         "status",
-        help="Report cryptographic configuration status (no crypto operations)",
+        help="Report cryptographic configuration status",
     )
     crypto_status_parser.add_argument(
         "--pretty",
@@ -998,7 +1097,7 @@ def create_parser() -> argparse.ArgumentParser:
 
     crypto_readiness_parser = crypto_subparsers.add_parser(
         "readiness",
-        help="Report cryptographic readiness assessment (no crypto operations)",
+        help="Report cryptographic readiness assessment",
     )
     crypto_readiness_parser.add_argument(
         "--pretty",
@@ -1009,9 +1108,123 @@ def create_parser() -> argparse.ArgumentParser:
 
     crypto_algorithms_parser = crypto_subparsers.add_parser(
         "algorithms",
-        help="Report algorithm support information (design only)",
+        help="Report algorithm support information",
     )
     crypto_algorithms_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    # Phase 9: Ed25519 key generation
+    crypto_keygen_parser = crypto_subparsers.add_parser(
+        "keygen",
+        help="Generate Ed25519 keypair (requires --dangerous)",
+    )
+    crypto_keygen_parser.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        help="Output path for private key (PEM format)",
+    )
+    crypto_keygen_parser.add_argument(
+        "--dangerous",
+        action="store_true",
+        help="Required safety gate for key generation",
+    )
+    crypto_keygen_parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Overwrite existing file",
+    )
+    crypto_keygen_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    # Phase 9: Public key derivation
+    crypto_pubkey_parser = crypto_subparsers.add_parser(
+        "pubkey",
+        help="Derive public key from private key",
+    )
+    crypto_pubkey_parser.add_argument(
+        "--key",
+        type=str,
+        required=True,
+        help="Path to private key (PEM format)",
+    )
+    crypto_pubkey_parser.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        help="Output path for public key (PEM format)",
+    )
+    crypto_pubkey_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    # Phase 9: Ed25519 signing
+    crypto_sign_parser = crypto_subparsers.add_parser(
+        "sign",
+        help="Sign a file with Ed25519",
+    )
+    crypto_sign_parser.add_argument(
+        "--key",
+        type=str,
+        required=True,
+        help="Path to private key (PEM format)",
+    )
+    crypto_sign_parser.add_argument(
+        "--in",
+        dest="file",
+        type=str,
+        required=True,
+        help="Path to file to sign",
+    )
+    crypto_sign_parser.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        help="Output path for signature (base64 encoded)",
+    )
+    crypto_sign_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    # Phase 9: Ed25519 verification
+    crypto_verify_parser = crypto_subparsers.add_parser(
+        "verify",
+        help="Verify an Ed25519 signature",
+    )
+    crypto_verify_parser.add_argument(
+        "--pubkey",
+        type=str,
+        required=True,
+        help="Path to public key (PEM format)",
+    )
+    crypto_verify_parser.add_argument(
+        "--in",
+        dest="file",
+        type=str,
+        required=True,
+        help="Path to file that was signed",
+    )
+    crypto_verify_parser.add_argument(
+        "--sig",
+        type=str,
+        required=True,
+        help="Path to signature file (base64 encoded)",
+    )
+    crypto_verify_parser.add_argument(
         "--pretty",
         action="store_true",
         default=True,
@@ -1236,6 +1449,14 @@ def main(argv=None) -> int:
             return cmd_crypto_readiness(args)
         elif args.crypto_command == "algorithms":
             return cmd_crypto_algorithms(args)
+        elif args.crypto_command == "keygen":
+            return cmd_crypto_keygen(args)
+        elif args.crypto_command == "pubkey":
+            return cmd_crypto_pubkey(args)
+        elif args.crypto_command == "sign":
+            return cmd_crypto_sign(args)
+        elif args.crypto_command == "verify":
+            return cmd_crypto_verify(args)
         else:
             # Default to status if no subcommand
             args.pretty = True
