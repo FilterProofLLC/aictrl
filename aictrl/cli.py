@@ -234,13 +234,16 @@ def cmd_evidence_verify(args) -> int:
 def cmd_boot_measure(args) -> int:
     """Handle boot measure command.
 
-    SIMULATION ONLY - no real boot operations.
+    Phase 10: Supports --source mock (default) or --source ima for real IMA.
     """
     pretty = getattr(args, "pretty", True)
+    source = getattr(args, "source", "mock")
+
     try:
-        result = simulate_boot_measurements(
-            context=getattr(args, "context", None),
-        )
+        # Import Phase 10 measure_boot function
+        from .commands.boot import measure_boot
+
+        result = measure_boot(source=source)
         output_json(result, pretty=pretty)
         return EXIT_SUCCESS
     except AICtrlError as e:
@@ -255,10 +258,26 @@ def cmd_boot_verify(args) -> int:
     """Handle boot verify command.
 
     Verifies boot identity from measurement log.
+    Phase 10: Supports --policy for policy-based verification.
     """
     pretty = getattr(args, "pretty", True)
+    policy_path = getattr(args, "policy", None)
+
     try:
-        # Load measurement log from file
+        # If policy provided, use policy-based verification
+        if policy_path:
+            from .commands.boot import verify_boot_against_policy
+
+            result = verify_boot_against_policy(
+                log_path=args.log,
+                policy_path=policy_path,
+            )
+            output_json(result, pretty=pretty)
+            if result.get("valid"):
+                return EXIT_SUCCESS
+            return EXIT_FAILURE
+
+        # Otherwise use hash-based verification
         log_path = Path(args.log)
         if not log_path.exists():
             output_json({"error": f"Measurement log not found: {args.log}"}, pretty=pretty)
@@ -946,16 +965,23 @@ def create_parser() -> argparse.ArgumentParser:
         help="Pretty-print JSON output",
     )
 
-    # boot command (SIMULATION ONLY)
+    # boot command (Phase 10: real boot measurement support)
     boot_parser = subparsers.add_parser(
         "boot",
-        help="Boot measurement simulation (SIMULATION ONLY - no real boot)",
+        help="Boot measurement (Phase 10: supports mock and real IMA sources)",
     )
     boot_subparsers = boot_parser.add_subparsers(dest="boot_command")
 
     boot_measure_parser = boot_subparsers.add_parser(
         "measure",
-        help="Simulate boot measurements (read-only, deterministic)",
+        help="Read boot measurements (Phase 10: supports mock and IMA sources)",
+    )
+    boot_measure_parser.add_argument(
+        "--source",
+        type=str,
+        choices=["mock", "ima"],
+        default="mock",
+        help="Measurement source: mock (default) or ima (real IMA from kernel)",
     )
     boot_measure_parser.add_argument(
         "--context",
@@ -980,6 +1006,12 @@ def create_parser() -> argparse.ArgumentParser:
         type=str,
         required=True,
         help="Path to measurement log JSON file",
+    )
+    boot_verify_parser.add_argument(
+        "--policy",
+        type=str,
+        default=None,
+        help="Path to policy JSON file for policy-based verification (Phase 10)",
     )
     boot_verify_parser.add_argument(
         "--expected",

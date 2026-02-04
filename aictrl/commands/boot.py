@@ -412,3 +412,350 @@ def get_measurement_summary(context: Optional[str] = None) -> dict[str, Any]:
             cause=str(e),
             remediation=["Check sandbox path exists", "Run from repository root"],
         )
+
+
+# ============================================================================
+# Phase 10: Real Boot Measurement Support
+# ============================================================================
+
+# IMA ASCII runtime measurements path
+IMA_RUNTIME_MEASUREMENTS_PATH = Path("/sys/kernel/security/ima/ascii_runtime_measurements")
+
+# Error codes for Phase 10
+BOOT_IMA_ERROR = "AICTRL-7010"
+BOOT_POLICY_ERROR = "AICTRL-7011"
+
+
+def parse_ima_measurement_line(line: str) -> Optional[dict[str, Any]]:
+    """Parse a single IMA measurement line.
+
+    IMA ASCII format:
+    PCR TEMPLATE_HASH TEMPLATE_NAME FILEDATA_HASH FILENAME_HINT
+
+    Example:
+    10 abc123... ima-ng sha256:def456... /path/to/file
+
+    Args:
+        line: A single line from IMA ascii_runtime_measurements
+
+    Returns:
+        Parsed measurement dict or None if unparseable
+    """
+    parts = line.strip().split()
+    if len(parts) < 5:
+        return None
+
+    try:
+        pcr = int(parts[0])
+        template_hash = parts[1]
+        template_name = parts[2]
+        filedata_hash = parts[3]
+        filename_hint = " ".join(parts[4:])
+
+        # Parse algorithm:hash format
+        algorithm = "sha256"
+        hash_value = filedata_hash
+        if ":" in filedata_hash:
+            algorithm, hash_value = filedata_hash.split(":", 1)
+
+        return {
+            "pcr": pcr,
+            "template_hash": template_hash,
+            "template_name": template_name,
+            "algorithm": algorithm,
+            "hash": hash_value,
+            "filename_hint": filename_hint,
+        }
+    except (ValueError, IndexError):
+        return None
+
+
+def read_ima_measurements() -> dict[str, Any]:
+    """Read real IMA measurements from kernel security filesystem.
+
+    Reads from /sys/kernel/security/ima/ascii_runtime_measurements.
+    This is a READ-ONLY operation.
+
+    Returns:
+        Dictionary with IMA measurements
+
+    Raises:
+        AICtrlError: If IMA not available or read fails
+    """
+    if not IMA_RUNTIME_MEASUREMENTS_PATH.exists():
+        raise AICtrlError(
+            BOOT_IMA_ERROR,
+            "IMA measurements not available",
+            cause=f"{IMA_RUNTIME_MEASUREMENTS_PATH} does not exist",
+            remediation=[
+                "IMA may not be enabled on this kernel",
+                "Use --source mock for simulated measurements",
+                "Enable CONFIG_IMA in kernel configuration",
+            ],
+        )
+
+    try:
+        timestamp = generate_timestamp()
+        measurements = []
+        line_count = 0
+
+        with open(IMA_RUNTIME_MEASUREMENTS_PATH, "r") as f:
+            for line in f:
+                line_count += 1
+                parsed = parse_ima_measurement_line(line)
+                if parsed:
+                    parsed["line_number"] = line_count
+                    measurements.append(parsed)
+
+        # Compute combined PCR 10 hash (concatenation of all PCR 10 entries)
+        pcr10_entries = [m for m in measurements if m.get("pcr") == 10]
+        pcr10_hashes = [m["hash"] for m in pcr10_entries]
+        combined_hash = calculate_sha256("".join(pcr10_hashes).encode("utf-8"))
+
+        return {
+            "source": "ima",
+            "ima_path": str(IMA_RUNTIME_MEASUREMENTS_PATH),
+            "timestamp_utc": timestamp,
+            "measurement_log": {
+                "version": "1.0",
+                "source": "ima",
+                "total_entries": line_count,
+                "parsed_entries": len(measurements),
+                "measurements": measurements,
+            },
+            "pcr10_summary": {
+                "entry_count": len(pcr10_entries),
+                "combined_hash": combined_hash,
+                "algorithm": "SHA-256",
+            },
+        }
+    except PermissionError:
+        raise AICtrlError(
+            BOOT_IMA_ERROR,
+            "Permission denied reading IMA measurements",
+            cause=f"Cannot read {IMA_RUNTIME_MEASUREMENTS_PATH}",
+            remediation=[
+                "Run with appropriate privileges",
+                "Use --source mock for simulated measurements",
+            ],
+        )
+    except Exception as e:
+        raise AICtrlError(
+            BOOT_IMA_ERROR,
+            "Failed to read IMA measurements",
+            cause=str(e),
+            remediation=["Use --source mock for simulated measurements"],
+        )
+
+
+def generate_mock_pcr10() -> dict[str, Any]:
+    """Generate mock PCR 10 measurement for testing.
+
+    Returns a deterministic mock measurement that simulates
+    what would be read from TPM PCR 10.
+
+    Returns:
+        Dictionary with mock PCR 10 data
+    """
+    timestamp = generate_timestamp()
+
+    # Deterministic mock data
+    mock_hash = calculate_sha256(b"AICTRL-MOCK-PCR10-MEASUREMENT-v1.0")
+
+    return {
+        "source": "mock",
+        "simulated": True,
+        "timestamp_utc": timestamp,
+        "measurement_log": {
+            "version": "1.0",
+            "source": "mock",
+            "total_entries": 1,
+            "parsed_entries": 1,
+            "measurements": [
+                {
+                    "pcr": 10,
+                    "template_hash": calculate_sha256(b"mock-template"),
+                    "template_name": "ima-ng",
+                    "algorithm": "sha256",
+                    "hash": mock_hash,
+                    "filename_hint": "/mock/aictrl/test",
+                    "line_number": 1,
+                }
+            ],
+        },
+        "pcr10_summary": {
+            "entry_count": 1,
+            "combined_hash": mock_hash,
+            "algorithm": "SHA-256",
+        },
+        "warning": "Mock measurement - not from real TPM/IMA. For testing only.",
+    }
+
+
+def measure_boot(source: str = "mock") -> dict[str, Any]:
+    """Measure boot state from specified source.
+
+    Args:
+        source: Measurement source - "mock" (default) or "ima"
+
+    Returns:
+        Dictionary with boot measurements
+
+    Raises:
+        AICtrlError: If source not available or read fails
+    """
+    if source == "mock":
+        return generate_mock_pcr10()
+    elif source == "ima":
+        return read_ima_measurements()
+    else:
+        raise AICtrlError(
+            BOOT_MEASUREMENT_ERROR,
+            f"Unknown measurement source: {source}",
+            cause=f"Source '{source}' is not recognized",
+            remediation=["Use --source mock or --source ima"],
+        )
+
+
+def verify_boot_against_policy(
+    log_path: str,
+    policy_path: str,
+) -> dict[str, Any]:
+    """Verify a boot measurement log against a policy.
+
+    Policy format (JSON):
+    {
+        "version": "1.0",
+        "rules": [
+            {
+                "name": "rule-name",
+                "match": {"field": "regex_pattern"},
+                "action": "allow" | "deny"
+            }
+        ],
+        "default_action": "allow" | "deny"
+    }
+
+    Args:
+        log_path: Path to measurement log JSON file
+        policy_path: Path to policy JSON file
+
+    Returns:
+        Verification result dictionary
+
+    Raises:
+        AICtrlError: If files not found or invalid format
+    """
+    log_file = Path(log_path)
+    policy_file = Path(policy_path)
+
+    # Validate files exist
+    if not log_file.exists():
+        raise AICtrlError(
+            BOOT_POLICY_ERROR,
+            "Measurement log not found",
+            cause=f"File not found: {log_path}",
+            remediation=["Provide valid path to measurement log JSON"],
+        )
+
+    if not policy_file.exists():
+        raise AICtrlError(
+            BOOT_POLICY_ERROR,
+            "Policy file not found",
+            cause=f"File not found: {policy_path}",
+            remediation=["Provide valid path to policy JSON"],
+        )
+
+    # Load files
+    try:
+        with open(log_file, "r") as f:
+            log_data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise AICtrlError(
+            BOOT_POLICY_ERROR,
+            "Invalid measurement log format",
+            cause=f"JSON parse error: {e}",
+            remediation=["Ensure log file is valid JSON"],
+        )
+
+    try:
+        with open(policy_file, "r") as f:
+            policy_data = json.load(f)
+    except json.JSONDecodeError as e:
+        raise AICtrlError(
+            BOOT_POLICY_ERROR,
+            "Invalid policy format",
+            cause=f"JSON parse error: {e}",
+            remediation=["Ensure policy file is valid JSON"],
+        )
+
+    # Extract measurements from log
+    measurements = log_data.get("measurement_log", {}).get("measurements", [])
+    if not measurements:
+        return {
+            "valid": False,
+            "error": "No measurements in log",
+            "log_path": str(log_file),
+            "policy_path": str(policy_file),
+        }
+
+    # Get policy rules
+    rules = policy_data.get("rules", [])
+    default_action = policy_data.get("default_action", "deny")
+
+    # Evaluate each measurement against policy
+    import re
+    violations = []
+    allowed = []
+    timestamp = generate_timestamp()
+
+    for measurement in measurements:
+        matched_rule = None
+        action = default_action
+
+        for rule in rules:
+            match_spec = rule.get("match", {})
+            matches = True
+
+            for field, pattern in match_spec.items():
+                field_value = str(measurement.get(field, ""))
+                try:
+                    if not re.search(pattern, field_value):
+                        matches = False
+                        break
+                except re.error:
+                    matches = False
+                    break
+
+            if matches:
+                matched_rule = rule.get("name", "unnamed")
+                action = rule.get("action", default_action)
+                break
+
+        entry = {
+            "measurement": measurement.get("filename_hint", measurement.get("id", "unknown")),
+            "hash": measurement.get("hash", ""),
+            "matched_rule": matched_rule,
+            "action": action,
+        }
+
+        if action == "deny":
+            violations.append(entry)
+        else:
+            allowed.append(entry)
+
+    valid = len(violations) == 0
+
+    return {
+        "valid": valid,
+        "timestamp_utc": timestamp,
+        "log_path": str(log_file),
+        "policy_path": str(policy_file),
+        "policy_version": policy_data.get("version", "unknown"),
+        "summary": {
+            "total_measurements": len(measurements),
+            "allowed": len(allowed),
+            "denied": len(violations),
+        },
+        "violations": violations if violations else None,
+    }

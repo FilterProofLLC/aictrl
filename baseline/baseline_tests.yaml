@@ -524,3 +524,54 @@ tests:
       nist: "SC-13"
       federal: "EO-14110-4.2"
     notes: "Missing key produces clear error message."
+
+  # ============================================================================
+  # Real Boot Measurement (Phase 10)
+  # ============================================================================
+  - id: "BL-200"
+    title: "Boot measure with mock source returns valid output"
+    command: ["python", "-m", "aictrl", "boot", "measure", "--source", "mock"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"source": "mock"'
+        - '"simulated": true'
+        - '"pcr10_summary"'
+        - '"combined_hash"'
+      ascii_only: true
+    spec:
+      internal: "BOOT-MEASURE-MOCK-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Mock boot measurement returns deterministic PCR 10 data."
+
+  - id: "BL-201"
+    title: "Boot measure defaults to mock source"
+    command: ["python", "-m", "aictrl", "boot", "measure"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"source": "mock"'
+        - '"warning"'
+    spec:
+      internal: "BOOT-MEASURE-DEFAULT-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Default --source is mock for safe operation."
+
+  - id: "BL-202"
+    title: "Boot verify with policy validates measurement log"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl202-* && python -m aictrl boot measure --source mock > /tmp/aictrl-bl202-log.json && echo '{\"version\": \"1.0\", \"rules\": [{\"name\": \"allow-all\", \"match\": {\"filename_hint\": \".*\"}, \"action\": \"allow\"}], \"default_action\": \"deny\"}' > /tmp/aictrl-bl202-policy.json && python -m aictrl boot verify --log /tmp/aictrl-bl202-log.json --policy /tmp/aictrl-bl202-policy.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"valid": true'
+        - '"policy_version"'
+        - '"summary"'
+      ascii_only: true
+    spec:
+      internal: "BOOT-VERIFY-POLICY-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Policy-based verification validates measurement log against rules."
