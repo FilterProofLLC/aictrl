@@ -575,3 +575,87 @@ tests:
       nist: "SC-12"
       federal: "EO-14110-4.2"
     notes: "Policy-based verification validates measurement log against rules."
+
+  # ============================================================================
+  # Signed Attestation (Phase 11)
+  # ============================================================================
+  - id: "BL-210"
+    title: "Attest generate help shows signing options"
+    command: ["python", "-m", "aictrl", "attest", "generate", "--help"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - "--key"
+        - "--dangerous"
+        - "Phase 11"
+      ascii_only: true
+    spec:
+      internal: "ATTEST-CLI-HELP-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Attest generate help documents --key and --dangerous options."
+
+  - id: "BL-211"
+    title: "Attest verify help shows pubkey option"
+    command: ["python", "-m", "aictrl", "attest", "verify", "--help"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - "--pubkey"
+        - "signature verification"
+        - "trust store"
+      ascii_only: true
+    spec:
+      internal: "ATTEST-CLI-HELP-002"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Attest verify help documents --pubkey option and no trust store."
+
+  - id: "BL-212"
+    title: "Verify with missing statement fails safely"
+    command: ["python", "-m", "aictrl", "attest", "verify",
+              "--statement", "/tmp/nonexistent-statement-bl212.json",
+              "--pubkey", "/tmp/nonexistent-key-bl212.pem"]
+    expect:
+      exit_code: 1
+      stdout_contains:
+        - '"error"'
+        - 'not found'
+      ascii_only: true
+    spec:
+      internal: "ATTEST-VERIFY-SAFE-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Missing statement file produces clear error message."
+
+  - id: "BL-213"
+    title: "Verify with missing pubkey fails safely"
+    command: ["bash", "-c",
+              "echo '{\"attestation_statement\": {\"signature\": {\"signed\": true}}}' > /tmp/aictrl-bl213-stmt.json && python -m aictrl attest verify --statement /tmp/aictrl-bl213-stmt.json --pubkey /tmp/nonexistent-key-bl213.pem"]
+    expect:
+      exit_code: 1
+      stdout_contains:
+        - '"error"'
+        - 'not found'
+      ascii_only: true
+    spec:
+      internal: "ATTEST-VERIFY-SAFE-002"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Missing public key file produces clear error message."
+
+  - id: "BL-214"
+    title: "Missing --dangerous fails safely"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl214-* && python -m aictrl crypto keygen --out /tmp/aictrl-bl214-key.pem --dangerous --force 2>/dev/null && python -m aictrl attest generate --key /tmp/aictrl-bl214-key.pem"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - 'requires --dangerous'
+      ascii_only: true
+    spec:
+      internal: "ATTEST-DANGEROUS-GATE-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Signed attestation requires explicit --dangerous flag as safety gate."

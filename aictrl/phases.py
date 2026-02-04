@@ -12,8 +12,9 @@ from typing import Any
 # Phase 8: Design complete, no crypto ops
 # Phase 9: MVP crypto (Ed25519 signing/verification)
 # Phase 10: Real boot measurement (read-only TPM/IMA)
-# Phase 11+: Future (signed attestation, exec enforcement)
-CURRENT_PHASE = 10
+# Phase 11: Signed attestation only. No enforcement.
+# Phase 12+: Future (exec enforcement, authz enforcement)
+CURRENT_PHASE = 11
 
 # Capability definitions: each capability is enabled at a specific phase
 # Format: capability_name -> (min_phase, description)
@@ -36,8 +37,11 @@ CAPABILITY_DEFINITIONS = {
     "boot_real_measurement": (10, "Read real boot measurements (IMA)"),
     "boot_policy_verify": (10, "Verify boot log against policy"),
 
-    # Phase 11+ capabilities (future)
-    "attest_signed": (11, "Generate signed attestation statements"),
+    # Phase 11 capabilities (signed attestation)
+    "attest_signed": (11, "Generate signed attestation statements (requires --dangerous)"),
+    "attest_verify_signature": (11, "Verify attestation signature with explicit pubkey"),
+
+    # Phase 12+ capabilities (future)
     "exec_controlled": (12, "Controlled execution with human gate"),
     "authz_enforceable": (13, "Enforceable authorization with policy signatures"),
 }

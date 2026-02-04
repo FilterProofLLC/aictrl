@@ -308,15 +308,36 @@ def cmd_boot_verify(args) -> int:
 def cmd_attest_generate(args) -> int:
     """Handle attest generate command.
 
-    SIMULATION ONLY - no real cryptographic signing.
+    Phase 11: Supports signed attestation with --key --dangerous.
+    Default: unsigned attestation with warning.
     Attestation is NOT authentication. Attestation is NOT authorization.
     """
     pretty = getattr(args, "pretty", True)
+    key_path = getattr(args, "key", None)
+    dangerous = getattr(args, "dangerous", False)
+
     try:
-        result = generate_attestation_statement(
-            context=getattr(args, "context", None),
-            evidence_bundle_path=getattr(args, "evidence_bundle", None),
-        )
+        # If key provided, generate signed attestation
+        if key_path:
+            from .commands.attest import generate_signed_attestation
+
+            result = generate_signed_attestation(
+                context=getattr(args, "context", None),
+                evidence_bundle_path=getattr(args, "evidence_bundle", None),
+                key_path=key_path,
+                dangerous=dangerous,
+            )
+
+            # Check for safety gate failure
+            if result.get("success") is False:
+                output_json(result, pretty=pretty)
+                return result.get("exit_code", 2)
+        else:
+            # Generate unsigned attestation (default)
+            result = generate_attestation_statement(
+                context=getattr(args, "context", None),
+                evidence_bundle_path=getattr(args, "evidence_bundle", None),
+            )
 
         # Optionally write to file
         out_path = getattr(args, "out", None)
@@ -325,6 +346,7 @@ def cmd_attest_generate(args) -> int:
                 json.dump(result, f, sort_keys=True, indent=2)
             output_json({
                 "success": True,
+                "signed": result.get("attestation_statement", {}).get("signature", {}).get("signed", False),
                 "statement_id": result["attestation_statement"]["statement_id"],
                 "output_path": out_path,
                 "attestation_id": result["attestation_statement"]["identity"]["attestation_id"],
@@ -343,10 +365,27 @@ def cmd_attest_generate(args) -> int:
 def cmd_attest_verify(args) -> int:
     """Handle attest verify command.
 
-    Verifies an attestation statement against current state.
+    Phase 11: Supports signature verification with --pubkey.
+    Verifies an attestation statement against current state and/or signature.
     """
     pretty = getattr(args, "pretty", True)
+    pubkey_path = getattr(args, "pubkey", None)
+
     try:
+        # If pubkey provided, verify signature
+        if pubkey_path:
+            from .commands.attest import verify_attestation_signature
+
+            result = verify_attestation_signature(
+                statement_path=args.statement,
+                pubkey_path=pubkey_path,
+            )
+            output_json(result, pretty=pretty)
+            if result.get("valid"):
+                return EXIT_SUCCESS
+            return EXIT_FAILURE
+
+        # Default: verify state consistency
         result = verify_attestation_statement(
             args.statement,
             allow_stale=getattr(args, "allow_stale", False),
@@ -1035,14 +1074,26 @@ def create_parser() -> argparse.ArgumentParser:
 
     attest_generate_parser = attest_subparsers.add_parser(
         "generate",
-        help="Generate an attestation statement (simulation only)",
+        help="Generate attestation statement (Phase 11: supports --key --dangerous for signing)",
     )
     attest_generate_parser.add_argument(
         "--context",
         type=str,
         choices=["aios-sandbox"],
         default="aios-sandbox",
-        help="Execution context (only aios-sandbox supported for simulation)",
+        help="Execution context (only aios-sandbox supported)",
+    )
+    attest_generate_parser.add_argument(
+        "--key",
+        type=str,
+        default=None,
+        help="Path to private key for signed attestation (Phase 11)",
+    )
+    attest_generate_parser.add_argument(
+        "--dangerous",
+        action="store_true",
+        default=False,
+        help="Required for signed attestation - confirms understanding of implications",
     )
     attest_generate_parser.add_argument(
         "--out",
@@ -1065,13 +1116,19 @@ def create_parser() -> argparse.ArgumentParser:
 
     attest_verify_parser = attest_subparsers.add_parser(
         "verify",
-        help="Verify an attestation statement",
+        help="Verify attestation statement (Phase 11: --pubkey for signature verification)",
     )
     attest_verify_parser.add_argument(
         "--statement",
         type=str,
         required=True,
         help="Path to attestation statement JSON file",
+    )
+    attest_verify_parser.add_argument(
+        "--pubkey",
+        type=str,
+        default=None,
+        help="Path to public key for signature verification (Phase 11, no trust store)",
     )
     attest_verify_parser.add_argument(
         "--allow-stale",
