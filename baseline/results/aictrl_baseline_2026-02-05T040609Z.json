@@ -1,5 +1,5 @@
 {
-  "aictrl_version": "{\"name\": \"aictrl\", \"version\": \"1.6.0\", \"phase\": 12, \"commit\": \"49d8e14\", \"build_timestamp\": \"2026-02-05T04:33:45.561947+00:00\", \"build_id\": null, \"product\": \"AICtrl - Portable AI Control Plane\", \"enabled_capabilities\": [\"crypto_status_reporting\", \"crypto_readiness_reporting\", \"authz_policy_evaluation\", \"exec_inspection\", \"boot_simulation\", \"attest_simulation\", \"crypto_keygen\", \"crypto_sign\", \"crypto_verify\", \"crypto_pubkey\", \"boot_real_measurement\", \"boot_policy_verify\", \"attest_signed\", \"attest_verify_signature\", \"exec_propose\", \"exec_review\", \"exec_approve\", \"exec_run\"]}",
+  "aictrl_version": "{\"name\": \"aictrl\", \"version\": \"1.6.0\", \"phase\": 12, \"commit\": \"e2c3a33\", \"build_timestamp\": \"2026-02-05T04:06:09.897739+00:00\", \"build_id\": null, \"product\": \"AICtrl - Portable AI Control Plane\", \"enabled_capabilities\": [\"crypto_status_reporting\", \"crypto_readiness_reporting\", \"authz_policy_evaluation\", \"exec_inspection\", \"boot_simulation\", \"attest_simulation\", \"crypto_keygen\", \"crypto_sign\", \"crypto_verify\", \"crypto_pubkey\", \"boot_real_measurement\", \"boot_policy_verify\", \"attest_signed\", \"attest_verify_signature\", \"exec_propose\", \"exec_review\", \"exec_approve\", \"exec_run\"]}",
   "attestation_type": "aictrl-baseline-result",
   "baseline_name": "AICtrl 1.x Baseline Test",
   "baseline_version": "1.5",
@@ -19,8 +19,8 @@
   "provenance": {
     "ci_run_id": null,
     "execution_environment": "local",
-    "git_branch": "chore/freeze-baseline-v1.6.0",
-    "git_commit": "49d8e14f42cf7f13f7a66b660c1c64fa26b70d4b",
+    "git_branch": "feat/phase-14-observability",
+    "git_commit": "e2c3a33c0248e619e8fbfcb17d6b4e44447db955",
     "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
     "python_version": "3.12.3",
     "repository_url": "git@github.com:FilterProofLLC/aictrl.git"
@@ -39,7 +39,7 @@
       "actual_result": "pass",
       "category": "cli-surface",
       "description": "Version flag returns valid output",
-      "duration_seconds": 0.055,
+      "duration_seconds": 0.056,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -53,7 +53,7 @@
       "actual_result": "pass",
       "category": "cli-surface",
       "description": "Version subcommand returns JSON output",
-      "duration_seconds": 0.058,
+      "duration_seconds": 0.057,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -81,7 +81,7 @@
       "actual_result": "pass",
       "category": "cli-surface",
       "description": "Authz help shows policy documentation",
-      "duration_seconds": 0.055,
+      "duration_seconds": 0.054,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -95,7 +95,7 @@
       "actual_result": "pass",
       "category": "authz-policy",
       "description": "Authz denies tooling in aios-base by default",
-      "duration_seconds": 0.051,
+      "duration_seconds": 0.055,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -123,7 +123,7 @@
       "actual_result": "pass",
       "category": "authz-policy",
       "description": "Authz allows system read in sandbox",
-      "duration_seconds": 0.054,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -137,7 +137,7 @@
       "actual_result": "pass",
       "category": "authz-policy",
       "description": "Authz denies invalid subject",
-      "duration_seconds": 0.055,
+      "duration_seconds": 0.049,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -151,7 +151,7 @@
       "actual_result": "pass",
       "category": "authz-policy",
       "description": "Authz denies invalid action",
-      "duration_seconds": 0.053,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -165,7 +165,7 @@
       "actual_result": "pass",
       "category": "authz-enforcement",
       "description": "Enforcement points are enumerable",
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.054,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -179,7 +179,7 @@
       "actual_result": "pass",
       "category": "authz-enforcement",
       "description": "Policy summary shows rule counts",
-      "duration_seconds": 0.049,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -193,7 +193,7 @@
       "actual_result": "pass",
       "category": "adapter-inspection",
       "description": "Adapter inspection shows AI prohibition",
-      "duration_seconds": 0.053,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -207,7 +207,7 @@
       "actual_result": "pass",
       "category": "adapter-inspection",
       "description": "Adapter inspection shows simulation flag",
-      "duration_seconds": 0.052,
+      "duration_seconds": 0.053,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -221,7 +221,7 @@
       "actual_result": "pass",
       "category": "adapter-inspection",
       "description": "Adapter inspection lists invariant violations for AI",
-      "duration_seconds": 0.052,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -249,7 +249,7 @@
       "actual_result": "pass",
       "category": "boundary-inspection",
       "description": "Boundary inspection shows AI cannot cross",
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.054,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -263,7 +263,7 @@
       "actual_result": "pass",
       "category": "boundary-inspection",
       "description": "Boundary inspection shows human gate",
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.054,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -277,7 +277,7 @@
       "actual_result": "pass",
       "category": "execution-readiness",
       "description": "Readiness shows blockers when not ready",
-      "duration_seconds": 0.053,
+      "duration_seconds": 0.049,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -305,7 +305,7 @@
       "actual_result": "pass",
       "category": "safe-failure",
       "description": "Doctor command runs without sandbox",
-      "duration_seconds": 0.202,
+      "duration_seconds": 0.182,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -319,7 +319,7 @@
       "actual_result": "pass",
       "category": "invalid-input",
       "description": "Invalid subcommand is rejected",
-      "duration_seconds": 0.051,
+      "duration_seconds": 0.054,
       "expected_result": "fail",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -333,7 +333,7 @@
       "actual_result": "pass",
       "category": "invalid-input",
       "description": "Invalid nested subcommand is rejected",
-      "duration_seconds": 0.052,
+      "duration_seconds": 0.054,
       "expected_result": "fail",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -375,7 +375,7 @@
       "actual_result": "pass",
       "category": "ascii-compliance",
       "description": "Version output is ASCII-only",
-      "duration_seconds": 0.063,
+      "duration_seconds": 0.055,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -389,7 +389,7 @@
       "actual_result": "pass",
       "category": "ascii-compliance",
       "description": "Authz output is ASCII-only",
-      "duration_seconds": 0.052,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -403,7 +403,7 @@
       "actual_result": "pass",
       "category": "evidence-trail",
       "description": "Authz decisions include evidence ID",
-      "duration_seconds": 0.053,
+      "duration_seconds": 0.05,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -417,7 +417,7 @@
       "actual_result": "pass",
       "category": "evidence-trail",
       "description": "Authz decisions include timestamp",
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.053,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -459,7 +459,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Keygen with --dangerous creates valid key",
-      "duration_seconds": 0.137,
+      "duration_seconds": 0.133,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -473,7 +473,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Sign and verify roundtrip succeeds",
-      "duration_seconds": 0.285,
+      "duration_seconds": 0.276,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -487,7 +487,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Sign with missing key fails safely",
-      "duration_seconds": 0.056,
+      "duration_seconds": 0.058,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -515,7 +515,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Boot measure defaults to mock source",
-      "duration_seconds": 0.055,
+      "duration_seconds": 0.049,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -529,7 +529,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Boot verify with policy validates measurement log",
-      "duration_seconds": 0.112,
+      "duration_seconds": 0.107,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -543,7 +543,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Attest generate help shows signing options",
-      "duration_seconds": 0.054,
+      "duration_seconds": 0.05,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -557,7 +557,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Attest verify help shows pubkey option",
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.051,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -571,7 +571,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Verify with missing statement fails safely",
-      "duration_seconds": 0.051,
+      "duration_seconds": 0.053,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -599,7 +599,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Missing --dangerous fails safely",
-      "duration_seconds": 0.145,
+      "duration_seconds": 0.147,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -613,7 +613,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Propose creates valid JSON with content_hash and status=proposed",
-      "duration_seconds": 0.06,
+      "duration_seconds": 0.054,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -627,7 +627,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Propose without --dangerous fails for dangerous adapter",
-      "duration_seconds": 0.05,
+      "duration_seconds": 0.049,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -641,7 +641,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Review detects tampered proposal (hash mismatch)",
-      "duration_seconds": 0.111,
+      "duration_seconds": 0.115,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -655,7 +655,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Review of valid proposal succeeds with proposal_id",
-      "duration_seconds": 0.102,
+      "duration_seconds": 0.104,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -669,7 +669,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Approve succeeds for valid proposal",
-      "duration_seconds": 0.107,
+      "duration_seconds": 0.103,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -683,7 +683,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Approve fails for tampered proposal",
-      "duration_seconds": 0.105,
+      "duration_seconds": 0.109,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -697,7 +697,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Run fails without approval",
-      "duration_seconds": 0.11,
+      "duration_seconds": 0.104,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -711,7 +711,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Run fails with mismatched approval hash",
-      "duration_seconds": 0.17,
+      "duration_seconds": 0.166,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -725,7 +725,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Run fails without --dangerous for dangerous adapter",
-      "duration_seconds": 0.16,
+      "duration_seconds": 0.151,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -739,7 +739,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Run succeeds for safe adapter with valid approval",
-      "duration_seconds": 0.156,
+      "duration_seconds": 0.171,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -753,7 +753,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Run blocked for unknown adapter",
-      "duration_seconds": 0.076,
+      "duration_seconds": 0.083,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -767,7 +767,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Approval binds to proposal_id and content_hash",
-      "duration_seconds": 0.118,
+      "duration_seconds": 0.106,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -795,7 +795,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Exec run creates result attestation referencing receipt",
-      "duration_seconds": 0.156,
+      "duration_seconds": 0.155,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -809,7 +809,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Observability write failure does not block execution",
-      "duration_seconds": 0.182,
+      "duration_seconds": 0.161,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -823,7 +823,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Receipt artifact content is ASCII-only",
-      "duration_seconds": 0.165,
+      "duration_seconds": 0.159,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -837,7 +837,7 @@
       "actual_result": "pass",
       "category": "unknown",
       "description": "Attestation includes result_hash for tamper detection",
-      "duration_seconds": 0.159,
+      "duration_seconds": 0.164,
       "expected_result": "pass",
       "pass_fail": "PASS",
       "spec_mappings": {
@@ -848,6 +848,6 @@
       "test_id": "BL-244"
     }
   ],
-  "timestamp_utc": "2026-02-05T043345Z",
+  "timestamp_utc": "2026-02-05T040609Z",
   "unexpected_failure_details": []
 }
