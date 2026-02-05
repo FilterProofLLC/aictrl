@@ -795,6 +795,77 @@ def cmd_exec_review(args) -> int:
         return EXIT_FAILURE
 
 
+def cmd_exec_approve(args) -> int:
+    """Handle exec approve command.
+
+    Phase 12 Part 2: Approve execution proposal.
+    This command:
+    - Validates proposal before approval
+    - Creates approval artifact binding to proposal_id and content_hash
+    - NEVER executes anything
+    - Only writes to explicit --out path
+    """
+    from .commands.exec import approve_proposal
+
+    pretty = getattr(args, "pretty", True)
+
+    try:
+        result = approve_proposal(
+            proposal_path=args.proposal,
+            approved_by=args.approved_by,
+            out_path=args.out,
+            overwrite=getattr(args, "overwrite", False),
+        )
+        output_json(result, pretty=pretty)
+
+        if result.get("success"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"success": False, "error": str(e), "exit_code": 1}, pretty=pretty)
+        return EXIT_FAILURE
+
+
+def cmd_exec_run(args) -> int:
+    """Handle exec run command.
+
+    Phase 12 Part 2: Execute approved proposal.
+    CRITICAL SAFETY CHECKS (enforced in order):
+    1. Approval must exist and be valid
+    2. Proposal must be valid and pass review
+    3. Content hash must match approval
+    4. Adapter must be in allowlist
+    5. Dangerous flag required at BOTH propose AND run for dangerous ops
+    6. Only then execute adapter logic
+    """
+    from .commands.exec import run_proposal
+
+    pretty = getattr(args, "pretty", True)
+
+    try:
+        result = run_proposal(
+            proposal_path=args.proposal,
+            approval_path=args.approval,
+            dangerous=getattr(args, "dangerous", False),
+        )
+        output_json(result, pretty=pretty)
+
+        if result.get("success"):
+            return EXIT_SUCCESS
+        return result.get("exit_code", EXIT_FAILURE)
+
+    except AICtrlError as e:
+        output_json(e.to_dict(), pretty=pretty)
+        return EXIT_FAILURE
+    except Exception as e:
+        output_json({"success": False, "error": str(e), "exit_code": 1}, pretty=pretty)
+        return EXIT_FAILURE
+
+
 def cmd_demo(args) -> int:
     """Handle demo command.
 
@@ -1601,6 +1672,71 @@ def create_parser() -> argparse.ArgumentParser:
         help="Pretty-print JSON output",
     )
 
+    # Phase 12 Part 2: approve and run
+    exec_approve_parser = exec_subparsers.add_parser(
+        "approve",
+        help="Approve execution proposal (Phase 12 Part 2: creates approval artifact)",
+    )
+    exec_approve_parser.add_argument(
+        "--proposal",
+        type=str,
+        required=True,
+        help="Path to proposal JSON file",
+    )
+    exec_approve_parser.add_argument(
+        "--approved-by",
+        type=str,
+        required=True,
+        help="Identity of the approver (required)",
+    )
+    exec_approve_parser.add_argument(
+        "--out",
+        type=str,
+        required=True,
+        help="Output path for approval JSON (required)",
+    )
+    exec_approve_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        default=False,
+        help="Overwrite existing output file",
+    )
+    exec_approve_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
+    exec_run_parser = exec_subparsers.add_parser(
+        "run",
+        help="Execute approved proposal (Phase 12 Part 2: requires valid approval)",
+    )
+    exec_run_parser.add_argument(
+        "--proposal",
+        type=str,
+        required=True,
+        help="Path to proposal JSON file",
+    )
+    exec_run_parser.add_argument(
+        "--approval",
+        type=str,
+        required=True,
+        help="Path to approval JSON file",
+    )
+    exec_run_parser.add_argument(
+        "--dangerous",
+        action="store_true",
+        default=False,
+        help="Required for dangerous adapters/actions (must match propose)",
+    )
+    exec_run_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output",
+    )
+
     return parser
 
 
@@ -1734,6 +1870,10 @@ def main(argv=None) -> int:
             return cmd_exec_propose(args)
         elif args.exec_command == "review":
             return cmd_exec_review(args)
+        elif args.exec_command == "approve":
+            return cmd_exec_approve(args)
+        elif args.exec_command == "run":
+            return cmd_exec_run(args)
         else:
             # Default to adapters if no subcommand
             args.pretty = True
