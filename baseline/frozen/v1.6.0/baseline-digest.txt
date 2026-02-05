@@ -1,0 +1,15 @@
+# AICtrl Baseline Attestation Digest
+# This file enables offline verification of baseline artifacts.
+#
+algorithm: SHA-256
+baseline_name: AICtrl 1.x Baseline Test
+baseline_version: 1.5
+commit_sha: 49d8e14f42cf7f13f7a66b660c1c64fa26b70d4b
+generated_at_utc: 2026-02-05T043345Z
+
+files:
+  - aictrl-baseline-attestation.json: 823db9afc0b46b44c5dd5fd8514d3db2b87160ad09d57bfa28f183c6cae57fda
+  - aictrl-baseline-manifest.json: fd3513104738ee76635577bd1dc508cb9c73fcf6ef5076d62d194c555dac69e6
+  - aictrl-baseline-report.txt: bce460998dca7f5230069fb85400d0e1a38d6ba4253eeb315cebc5beb72b4023
+  - aictrl-spec-coverage.json: 25aab99a3191eeffaa200331bba73fa08a103226827ee61a3b4792d62b3d4271
+  - aictrl-spec-coverage.txt: 4c7ecf25764cf0802b84a016ed01eca1014d9a8990d5671cc6128e3cd61ed21b

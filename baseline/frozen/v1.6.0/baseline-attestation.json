@@ -1,0 +1,853 @@
+{
+  "aictrl_version": "{\"name\": \"aictrl\", \"version\": \"1.6.0\", \"phase\": 12, \"commit\": \"49d8e14\", \"build_timestamp\": \"2026-02-05T04:33:45.561947+00:00\", \"build_id\": null, \"product\": \"AICtrl - Portable AI Control Plane\", \"enabled_capabilities\": [\"crypto_status_reporting\", \"crypto_readiness_reporting\", \"authz_policy_evaluation\", \"exec_inspection\", \"boot_simulation\", \"attest_simulation\", \"crypto_keygen\", \"crypto_sign\", \"crypto_verify\", \"crypto_pubkey\", \"boot_real_measurement\", \"boot_policy_verify\", \"attest_signed\", \"attest_verify_signature\", \"exec_propose\", \"exec_review\", \"exec_approve\", \"exec_run\"]}",
+  "attestation_type": "aictrl-baseline-result",
+  "baseline_name": "AICtrl 1.x Baseline Test",
+  "baseline_version": "1.5",
+  "execution_context": "local",
+  "expected_failure_details": [
+    {
+      "name": "Host safety violation without flag",
+      "reason": "Test is designed to verify rejection of unsafe operation",
+      "test_id": "BL-080"
+    }
+  ],
+  "host_metadata": {
+    "hostname": "Travis",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python_version": "3.12.3"
+  },
+  "provenance": {
+    "ci_run_id": null,
+    "execution_environment": "local",
+    "git_branch": "chore/freeze-baseline-v1.6.0",
+    "git_commit": "49d8e14f42cf7f13f7a66b660c1c64fa26b70d4b",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python_version": "3.12.3",
+    "repository_url": "git@github.com:FilterProofLLC/aictrl.git"
+  },
+  "schema_version": "1.1",
+  "summary": {
+    "expected_failures": 1,
+    "failed": 1,
+    "overall_result": "PASS",
+    "passed": 57,
+    "total_tests": 58,
+    "unexpected_failures": 0
+  },
+  "test_results": [
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Version flag returns valid output",
+      "duration_seconds": 0.055,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-SURFACE-001",
+        "nist": "ID.AM-2"
+      },
+      "test_id": "BL-001"
+    },
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Version subcommand returns JSON output",
+      "duration_seconds": 0.058,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-SURFACE-002",
+        "nist": "ID.AM-2"
+      },
+      "test_id": "BL-002"
+    },
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Help flag returns usage information",
+      "duration_seconds": 0.054,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-SURFACE-003",
+        "nist": "ID.AM-2"
+      },
+      "test_id": "BL-003"
+    },
+    {
+      "actual_result": "pass",
+      "category": "cli-surface",
+      "description": "Authz help shows policy documentation",
+      "duration_seconds": 0.055,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "CLI-SURFACE-004",
+        "nist": "GV.PO-1"
+      },
+      "test_id": "BL-004"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz denies tooling in aios-base by default",
+      "duration_seconds": 0.051,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-016",
+        "nist": "AC-3"
+      },
+      "test_id": "BL-010"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz requires PROPOSAL for tooling write in sandbox",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-005",
+        "nist": "AC-3"
+      },
+      "test_id": "BL-011"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz allows system read in sandbox",
+      "duration_seconds": 0.054,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "POLICY-SANDBOX-001",
+        "nist": "AC-3"
+      },
+      "test_id": "BL-012"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz denies invalid subject",
+      "duration_seconds": 0.055,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6"
+      },
+      "test_id": "BL-013"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-policy",
+      "description": "Authz denies invalid action",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6"
+      },
+      "test_id": "BL-014"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-enforcement",
+      "description": "Enforcement points are enumerable",
+      "duration_seconds": 0.05,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "AUTHZ-ENFORCEMENT-001",
+        "nist": "AC-3(7)"
+      },
+      "test_id": "BL-020"
+    },
+    {
+      "actual_result": "pass",
+      "category": "authz-enforcement",
+      "description": "Policy summary shows rule counts",
+      "duration_seconds": 0.049,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "AUTHZ-POLICY-001",
+        "nist": "GV.PO-1"
+      },
+      "test_id": "BL-021"
+    },
+    {
+      "actual_result": "pass",
+      "category": "adapter-inspection",
+      "description": "Adapter inspection shows AI prohibition",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6(9)"
+      },
+      "test_id": "BL-030"
+    },
+    {
+      "actual_result": "pass",
+      "category": "adapter-inspection",
+      "description": "Adapter inspection shows simulation flag",
+      "duration_seconds": 0.052,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "EXEC-INSPECT-001",
+        "nist": "CA-8"
+      },
+      "test_id": "BL-031"
+    },
+    {
+      "actual_result": "pass",
+      "category": "adapter-inspection",
+      "description": "Adapter inspection lists invariant violations for AI",
+      "duration_seconds": 0.052,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "AC-6(9)"
+      },
+      "test_id": "BL-032"
+    },
+    {
+      "actual_result": "pass",
+      "category": "boundary-inspection",
+      "description": "Boundary inspection shows execution barrier",
+      "duration_seconds": 0.049,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "EXEC-BOUNDARY-001",
+        "nist": "SC-7"
+      },
+      "test_id": "BL-040"
+    },
+    {
+      "actual_result": "pass",
+      "category": "boundary-inspection",
+      "description": "Boundary inspection shows AI cannot cross",
+      "duration_seconds": 0.05,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-004",
+        "nist": "SC-7"
+      },
+      "test_id": "BL-041"
+    },
+    {
+      "actual_result": "pass",
+      "category": "boundary-inspection",
+      "description": "Boundary inspection shows human gate",
+      "duration_seconds": 0.05,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-005",
+        "nist": "AC-3(7)"
+      },
+      "test_id": "BL-042"
+    },
+    {
+      "actual_result": "pass",
+      "category": "execution-readiness",
+      "description": "Readiness shows blockers when not ready",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "EXEC-READY-001",
+        "nist": "CA-7"
+      },
+      "test_id": "BL-050"
+    },
+    {
+      "actual_result": "pass",
+      "category": "safe-failure",
+      "description": "Sandbox status fails safely when not running",
+      "duration_seconds": 0.075,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-016",
+        "nist": "SI-17"
+      },
+      "test_id": "BL-060"
+    },
+    {
+      "actual_result": "pass",
+      "category": "safe-failure",
+      "description": "Doctor command runs without sandbox",
+      "duration_seconds": 0.202,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-016",
+        "nist": "CA-7"
+      },
+      "test_id": "BL-061"
+    },
+    {
+      "actual_result": "pass",
+      "category": "invalid-input",
+      "description": "Invalid subcommand is rejected",
+      "duration_seconds": 0.051,
+      "expected_result": "fail",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-VALIDATION-001",
+        "nist": "SI-10"
+      },
+      "test_id": "BL-070"
+    },
+    {
+      "actual_result": "pass",
+      "category": "invalid-input",
+      "description": "Invalid nested subcommand is rejected",
+      "duration_seconds": 0.052,
+      "expected_result": "fail",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "CLI-VALIDATION-002",
+        "nist": "SI-10"
+      },
+      "test_id": "BL-071"
+    },
+    {
+      "actual_result": "fail",
+      "category": "environment-override",
+      "description": "Host safety violation without flag",
+      "duration_seconds": 0.051,
+      "expected_result": "fail",
+      "pass_fail": "FAIL",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-019",
+        "nist": "CM-7"
+      },
+      "test_id": "BL-080"
+    },
+    {
+      "actual_result": "pass",
+      "category": "environment-override",
+      "description": "Host safety override requires both env and flag",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.5",
+        "internal": "INV-019",
+        "nist": "CM-7"
+      },
+      "test_id": "BL-081"
+    },
+    {
+      "actual_result": "pass",
+      "category": "ascii-compliance",
+      "description": "Version output is ASCII-only",
+      "duration_seconds": 0.063,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "OUTPUT-ASCII-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-090"
+    },
+    {
+      "actual_result": "pass",
+      "category": "ascii-compliance",
+      "description": "Authz output is ASCII-only",
+      "duration_seconds": 0.052,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "OUTPUT-ASCII-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-091"
+    },
+    {
+      "actual_result": "pass",
+      "category": "evidence-trail",
+      "description": "Authz decisions include evidence ID",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-008",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-100"
+    },
+    {
+      "actual_result": "pass",
+      "category": "evidence-trail",
+      "description": "Authz decisions include timestamp",
+      "duration_seconds": 0.05,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "INV-011",
+        "nist": "AU-8"
+      },
+      "test_id": "BL-101"
+    },
+    {
+      "actual_result": "pass",
+      "category": "determinism",
+      "description": "Policy evaluation is deterministic",
+      "duration_seconds": 0.053,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "POLICY-DETERMINISM-001",
+        "nist": "SC-5"
+      },
+      "test_id": "BL-110"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Keygen without --dangerous fails safely",
+      "duration_seconds": 0.049,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "CRYPTO-KEYGEN-GATE-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-120"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Keygen with --dangerous creates valid key",
+      "duration_seconds": 0.137,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "CRYPTO-KEYGEN-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-121"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Sign and verify roundtrip succeeds",
+      "duration_seconds": 0.285,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "CRYPTO-SIGN-VERIFY-001",
+        "nist": "SC-13"
+      },
+      "test_id": "BL-122"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Sign with missing key fails safely",
+      "duration_seconds": 0.056,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "CRYPTO-ERROR-001",
+        "nist": "SC-13"
+      },
+      "test_id": "BL-123"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Boot measure with mock source returns valid output",
+      "duration_seconds": 0.051,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "BOOT-MEASURE-MOCK-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-200"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Boot measure defaults to mock source",
+      "duration_seconds": 0.055,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "BOOT-MEASURE-DEFAULT-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-201"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Boot verify with policy validates measurement log",
+      "duration_seconds": 0.112,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "BOOT-VERIFY-POLICY-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-202"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Attest generate help shows signing options",
+      "duration_seconds": 0.054,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "ATTEST-CLI-HELP-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-210"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Attest verify help shows pubkey option",
+      "duration_seconds": 0.05,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "ATTEST-CLI-HELP-002",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-211"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Verify with missing statement fails safely",
+      "duration_seconds": 0.051,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "ATTEST-VERIFY-SAFE-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-212"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Verify with missing pubkey fails safely",
+      "duration_seconds": 0.054,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "ATTEST-VERIFY-SAFE-002",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-213"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Missing --dangerous fails safely",
+      "duration_seconds": 0.145,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "ATTEST-DANGEROUS-GATE-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-214"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Propose creates valid JSON with content_hash and status=proposed",
+      "duration_seconds": 0.06,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-PROPOSE-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-220"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Propose without --dangerous fails for dangerous adapter",
+      "duration_seconds": 0.05,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-DANGEROUS-GATE-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-221"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Review detects tampered proposal (hash mismatch)",
+      "duration_seconds": 0.111,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-TAMPER-DETECT-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-222"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Review of valid proposal succeeds with proposal_id",
+      "duration_seconds": 0.102,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-REVIEW-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-223"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Approve succeeds for valid proposal",
+      "duration_seconds": 0.107,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-APPROVE-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-230"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Approve fails for tampered proposal",
+      "duration_seconds": 0.105,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-APPROVE-TAMPER-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-231"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Run fails without approval",
+      "duration_seconds": 0.11,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-RUN-NO-APPROVAL-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-232"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Run fails with mismatched approval hash",
+      "duration_seconds": 0.17,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-RUN-HASH-MISMATCH-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-233"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Run fails without --dangerous for dangerous adapter",
+      "duration_seconds": 0.16,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-RUN-DANGEROUS-GATE-001",
+        "nist": "SC-12"
+      },
+      "test_id": "BL-234"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Run succeeds for safe adapter with valid approval",
+      "duration_seconds": 0.156,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-RUN-SUCCESS-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-235"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Run blocked for unknown adapter",
+      "duration_seconds": 0.076,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-RUN-ADAPTER-DENY-001",
+        "nist": "SC-7"
+      },
+      "test_id": "BL-236"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Approval binds to proposal_id and content_hash",
+      "duration_seconds": 0.118,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.2",
+        "internal": "EXEC-APPROVE-BINDING-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-237"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Exec run creates execution receipt before adapter execution",
+      "duration_seconds": 0.162,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "OBS-RECEIPT-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-240"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Exec run creates result attestation referencing receipt",
+      "duration_seconds": 0.156,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "OBS-ATTEST-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-241"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Observability write failure does not block execution",
+      "duration_seconds": 0.182,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "OBS-FAILSAFE-001",
+        "nist": "SI-17"
+      },
+      "test_id": "BL-242"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Receipt artifact content is ASCII-only",
+      "duration_seconds": 0.165,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.1",
+        "internal": "OBS-ASCII-001",
+        "nist": "AU-3"
+      },
+      "test_id": "BL-243"
+    },
+    {
+      "actual_result": "pass",
+      "category": "unknown",
+      "description": "Attestation includes result_hash for tamper detection",
+      "duration_seconds": 0.159,
+      "expected_result": "pass",
+      "pass_fail": "PASS",
+      "spec_mappings": {
+        "federal": "EO-14110-4.3",
+        "internal": "OBS-RESULT-HASH-001",
+        "nist": "AU-10"
+      },
+      "test_id": "BL-244"
+    }
+  ],
+  "timestamp_utc": "2026-02-05T043345Z",
+  "unexpected_failure_details": []
+}

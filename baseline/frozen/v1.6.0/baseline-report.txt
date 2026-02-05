@@ -1,0 +1,2815 @@
+================================================================================
+AICtrl Baseline Test Report
+================================================================================
+
+Baseline Name:    AICtrl 1.x Baseline Test
+Baseline Version: 1.5
+Min Required:     1.0.0
+Runtime Version:  1.6.0
+Timestamp (UTC):  2026-02-05T043345Z
+
+--------------------------------------------------------------------------------
+Host Metadata
+--------------------------------------------------------------------------------
+Python Version:   3.12.3
+Python Path:      /usr/bin/python3
+Platform:         Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39
+Hostname:         Travis
+AICtrl Path:      /home/filterprooftravis/work/AIOS/tools/aictrl/aictrl
+AICtrl Version:   {"name": "aictrl", "version": "1.6.0", "phase": 12, "commit": "49d8e14", "build_timestamp": "2026-02-05T04:33:45.561947+00:00", "build_id": null, "product": "AICtrl - Portable AI Control Plane", "enabled_capabilities": ["crypto_status_reporting", "crypto_readiness_reporting", "authz_policy_evaluation", "exec_inspection", "boot_simulation", "attest_simulation", "crypto_keygen", "crypto_sign", "crypto_verify", "crypto_pubkey", "boot_real_measurement", "boot_policy_verify", "attest_signed", "attest_verify_signature", "exec_propose", "exec_review", "exec_approve", "exec_run"]}
+
+--------------------------------------------------------------------------------
+Summary
+--------------------------------------------------------------------------------
+Total Tests:          58
+Passed:               57
+Expected Failures:    1
+Unexpected Failures:  0
+
+Overall Status:       PASS
+
+NOTE: Expected failures are intentional test cases that verify
+      the system correctly rejects unsafe operations.
+      These do not indicate regressions.
+
+Expected failure test IDs:
+  - BL-080: Host safety violation without flag
+
+================================================================================
+Test Results
+================================================================================
+
+--------------------------------------------------------------------------------
+Test ID: BL-001
+--------------------------------------------------------------------------------
+Title:   Version flag returns valid output
+Command: /usr/bin/python3 -m aictrl --version
+Result:  PASS
+Duration: 0.055s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  CLI-SURFACE-001
+  NIST RMF:  ID.AM-2
+  Federal:   EO-14110-4.1
+
+Notes: Validates CLI is installed and reports version correctly.
+
+stdout:
+  {"name": "aictrl", "version": "1.6.0", "phase": 12, "commit": "49d8e14", "build_timestamp": "2026-02-05T04:33:45.622852+00:00", "build_id": null, "product": "AICtrl - Portable AI Control Plane", "enabled_capabilities": ["crypto_status_reporting", "crypto_readiness_reporting", "authz_policy_evaluation", "exec_inspection", "boot_simulation", "attest_simulation", "crypto_keygen", "crypto_sign", "crypto_verify", "crypto_pubkey", "boot_real_measurement", "boot_policy_verify", "attest_signed", "attest_verify_signature", "exec_propose", "exec_review", "exec_approve", "exec_run"]}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-002
+--------------------------------------------------------------------------------
+Title:   Version subcommand returns JSON output
+Command: /usr/bin/python3 -m aictrl version
+Result:  PASS
+Duration: 0.058s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  CLI-SURFACE-002
+  NIST RMF:  ID.AM-2
+  Federal:   EO-14110-4.1
+
+Notes: Version subcommand returns structured JSON with build metadata.
+
+stdout:
+  {"name": "aictrl", "version": "1.6.0", "phase": 12, "commit": "49d8e14", "build_timestamp": "2026-02-05T04:33:45.680712+00:00", "build_id": null, "product": "AICtrl - Portable AI Control Plane", "enabled_capabilities": ["crypto_status_reporting", "crypto_readiness_reporting", "authz_policy_evaluation", "exec_inspection", "boot_simulation", "attest_simulation", "crypto_keygen", "crypto_sign", "crypto_verify", "crypto_pubkey", "boot_real_measurement", "boot_policy_verify", "attest_signed", "attest_verify_signature", "exec_propose", "exec_review", "exec_approve", "exec_run"]}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-003
+--------------------------------------------------------------------------------
+Title:   Help flag returns usage information
+Command: /usr/bin/python3 -m aictrl --help
+Result:  PASS
+Duration: 0.054s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  CLI-SURFACE-003
+  NIST RMF:  ID.AM-2
+  Federal:   EO-14110-4.1
+
+Notes: Help output provides user guidance for CLI usage.
+
+stdout:
+  usage: aictrl [-h] [--version] [--i-accept-risk]
+                {version,status,demo,doctor,support-bundle,pr,sandbox,evidence,boot,attest,crypto,authz,exec}
+                ...
+  
+  AICtrl - Portable AI Control Plane CLI
+  
+  positional arguments:
+    {version,status,demo,doctor,support-bundle,pr,sandbox,evidence,boot,attest,crypto,authz,exec}
+                          Available commands
+      version             Show version information
+      status              Show system status
+      demo                Run demo showcasing v1.2-v1.4 features (no side
+                          effects except --out dir)
+      doctor              Run system health checks
+      support-bundle      Create diagnostic support bundle
+      pr                  Pull request workflow
+      sandbox             AICtrl Dev Sandbox management
+      evidence            Evidence bundle management
+      boot                Boot measurement (Phase 10: supports mock and real IMA
+                          sources)
+      attest              Attestation simulation (SIMULATION ONLY - not
+                          cryptographically signed)
+      crypto              Cryptographic operations (Phase 9: Ed25519
+                          signing/verification)
+      authz               Authorization policy evaluation (NOT authentication)
+      exec                Execution proposal/review (Phase 12: NO execution,
+                          propose and review only)
+  
+  options:
+    -h, --help            show this help message and exit
+    --version, -V         Show version information
+    --i-accept-risk       Required with AICTRL_HOST_SAFETY=0 to disable host
+                          safety (target environment only)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-004
+--------------------------------------------------------------------------------
+Title:   Authz help shows policy documentation
+Command: /usr/bin/python3 -m aictrl authz --help
+Result:  PASS
+Duration: 0.055s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  CLI-SURFACE-004
+  NIST RMF:  GV.PO-1
+  Federal:   EO-14110-4.2
+
+Notes: Authorization subsystem is discoverable via help.
+
+stdout:
+  usage: aictrl authz [-h] {check,policy,enforcement} ...
+  
+  positional arguments:
+    {check,policy,enforcement}
+      check               Check authorization for an action (read-only,
+                          deterministic)
+      policy              Show authorization policy summary
+      enforcement         Show enforcement points summary
+  
+  options:
+    -h, --help            show this help message and exit
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-010
+--------------------------------------------------------------------------------
+Title:   Authz denies tooling in aios-base by default
+Command: /usr/bin/python3 -m aictrl authz check --subject tooling --action read --context aios-base
+Result:  PASS
+Duration: 0.051s
+Exit Code: 1
+
+Spec Mapping:
+  Internal:  INV-016
+  NIST RMF:  AC-3
+  Federal:   EO-14110-4.5
+
+Notes: Deny-by-default policy enforced for tooling in production context. Exit code 1 indicates denied action.
+
+stdout:
+  {
+    "authorization_check": {
+      "decision": "DENY",
+      "evidence_id": "10c6ee25-1eb3-4bef-b944-6c16a555ddca",
+      "timestamp": "2026-02-05T04:33:45.840919+00:00",
+      "subject": {
+        "type": "tooling",
+        "valid": true
+      },
+      "action": {
+        "type": "read",
+        "target": null,
+        "valid": true
+      },
+      "context": "aios-base",
+      "policy": {
+        "rule_matched": "BASE-006",
+        "rule_name": "deny-tooling-all",
+        "rule_source": "builtin",
+        "rules_evaluated": 6
+      },
+      "reason": "Tooling not installed in production",
+      "bbail_version": "1.6.0",
+      "notices": [
+        {
+          "type": "disclaimer",
+          "severity": "critical",
+          "message": "Authorization is NOT authentication - does not verify identity"
+        },
+        {
+          "type": "disclaimer",
+          "severity": "normal",
+          "message": "Authorization decisions are deterministic and auditable"
+        },
+        {
+          "type": "info",
+          "severity": "normal",
+          "message": "See docs/security/AUTHORIZATION_MODEL.md for semantics"
+        }
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-011
+--------------------------------------------------------------------------------
+Title:   Authz requires PROPOSAL for tooling write in sandbox
+Command: /usr/bin/python3 -m aictrl authz check --subject tooling --action write --context aios-sandbox
+Result:  PASS
+Duration: 0.053s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-005
+  NIST RMF:  AC-3
+  Federal:   EO-14110-4.5
+
+Notes: Write operations require human approval via PROPOSAL decision.
+
+stdout:
+  {
+    "authorization_check": {
+      "decision": "PROPOSAL",
+      "evidence_id": "55fdaba7-7fea-442f-af5b-945bd211fbea",
+      "timestamp": "2026-02-05T04:33:45.894472+00:00",
+      "subject": {
+        "type": "tooling",
+        "valid": true
+      },
+      "action": {
+        "type": "write",
+        "target": null,
+        "valid": true
+      },
+      "context": "aios-sandbox",
+      "policy": {
+        "rule_matched": "SANDBOX-007",
+        "rule_name": "tooling-write-proposal",
+        "rule_source": "builtin",
+        "rules_evaluated": 7
+      },
+      "reason": "Tooling write requires human approval",
+      "bbail_version": "1.6.0",
+      "notices": [
+        {
+          "type": "disclaimer",
+          "severity": "critical",
+          "message": "Authorization is NOT authentication - does not verify identity"
+        },
+        {
+          "type": "disclaimer",
+          "severity": "normal",
+          "message": "Authorization decisions are deterministic and auditable"
+        },
+        {
+          "type": "info",
+          "severity": "normal",
+          "message": "See docs/security/AUTHORIZATION_MODEL.md for semantics"
+        }
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-012
+--------------------------------------------------------------------------------
+Title:   Authz allows system read in sandbox
+Command: /usr/bin/python3 -m aictrl authz check --subject system --action read --context aios-sandbox
+Result:  PASS
+Duration: 0.054s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  POLICY-SANDBOX-001
+  NIST RMF:  AC-3
+  Federal:   EO-14110-4.2
+
+Notes: System read operations are allowed in sandbox context.
+
+stdout:
+  {
+    "authorization_check": {
+      "decision": "ALLOW",
+      "evidence_id": "931e28d0-481f-4610-9ed3-3d659b698219",
+      "timestamp": "2026-02-05T04:33:45.949235+00:00",
+      "subject": {
+        "type": "system",
+        "valid": true
+      },
+      "action": {
+        "type": "read",
+        "target": null,
+        "valid": true
+      },
+      "context": "aios-sandbox",
+      "policy": {
+        "rule_matched": "SANDBOX-001",
+        "rule_name": "allow-system-all",
+        "rule_source": "builtin",
+        "rules_evaluated": 7
+      },
+      "reason": "System operations allowed in sandbox",
+      "bbail_version": "1.6.0",
+      "notices": [
+        {
+          "type": "disclaimer",
+          "severity": "critical",
+          "message": "Authorization is NOT authentication - does not verify identity"
+        },
+        {
+          "type": "disclaimer",
+          "severity": "normal",
+          "message": "Authorization decisions are deterministic and auditable"
+        },
+        {
+          "type": "info",
+          "severity": "normal",
+          "message": "See docs/security/AUTHORIZATION_MODEL.md for semantics"
+        }
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-013
+--------------------------------------------------------------------------------
+Title:   Authz denies invalid subject
+Command: /usr/bin/python3 -m aictrl authz check --subject ai_agent --action read --context aios-sandbox
+Result:  PASS
+Duration: 0.055s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  INV-004
+  NIST RMF:  AC-6
+  Federal:   EO-14110-4.5
+
+Notes: AI cannot be a valid subject - enforced at input validation.
+
+stdout:
+  (empty)
+
+stderr:
+  usage: aictrl authz check [-h] --subject {system,human_operator,tooling}
+                            --action {read,write,measure,export,simulate}
+                            [--context {aios-base,aios-dev,aios-ci,aios-sandbox}]
+                            [--target TARGET] [--pretty]
+  aictrl authz check: error: argument --subject: invalid choice: 'ai_agent' (choose from 'system', 'human_operator', 'tooling')
+
+--------------------------------------------------------------------------------
+Test ID: BL-014
+--------------------------------------------------------------------------------
+Title:   Authz denies invalid action
+Command: /usr/bin/python3 -m aictrl authz check --subject tooling --action execute --context aios-sandbox
+Result:  PASS
+Duration: 0.053s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  INV-004
+  NIST RMF:  AC-6
+  Federal:   EO-14110-4.5
+
+Notes: Execute is not a valid action - AI cannot execute.
+
+stdout:
+  (empty)
+
+stderr:
+  usage: aictrl authz check [-h] --subject {system,human_operator,tooling}
+                            --action {read,write,measure,export,simulate}
+                            [--context {aios-base,aios-dev,aios-ci,aios-sandbox}]
+                            [--target TARGET] [--pretty]
+  aictrl authz check: error: argument --action: invalid choice: 'execute' (choose from 'read', 'write', 'measure', 'export', 'simulate')
+
+--------------------------------------------------------------------------------
+Test ID: BL-020
+--------------------------------------------------------------------------------
+Title:   Enforcement points are enumerable
+Command: /usr/bin/python3 -m aictrl authz enforcement
+Result:  PASS
+Duration: 0.050s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  AUTHZ-ENFORCEMENT-001
+  NIST RMF:  AC-3(7)
+  Federal:   EO-14110-4.2
+
+Notes: All enforcement points are documented and discoverable.
+
+stdout:
+  {
+    "enforcement_points": {
+      "checked_at": "2026-02-05T04:33:46.107584+00:00",
+      "count": 11,
+      "points": [
+        {
+          "id": "EP-001",
+          "name": "cli_entry",
+          "category": "CLI",
+          "action": "invoke"
+        },
+        {
+          "id": "EP-002",
+          "name": "command_dispatch",
+          "category": "CLI",
+          "action": "varies"
+        },
+        {
+          "id": "EP-010",
+          "name": "bbail_status",
+          "category": "Command",
+          "action": "read"
+        },
+        {
+          "id": "EP-011",
+          "name": "bbail_doctor",
+          "category": "Command",
+          "action": "measure"
+        },
+        {
+          "id": "EP-020",
+          "name": "evidence_export",
+          "category": "Evidence",
+          "action": "export"
+        },
+        {
+          "id": "EP-030",
+          "name": "boot_measure",
+          "category": "Boot",
+          "action": "simulate"
+        },
+        {
+          "id": "EP-040",
+          "name": "attest_generate",
+          "category": "Attestation",
+          "action": "export"
+        },
+        {
+          "id": "EP-050",
+          "name": "sandbox_status",
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-021
+--------------------------------------------------------------------------------
+Title:   Policy summary shows rule counts
+Command: /usr/bin/python3 -m aictrl authz policy --context aios-sandbox
+Result:  PASS
+Duration: 0.049s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  AUTHZ-POLICY-001
+  NIST RMF:  GV.PO-1
+  Federal:   EO-14110-4.2
+
+Notes: Policy is introspectable with rule counts and default policy.
+
+stdout:
+  {
+    "policy_summary": {
+      "context": "aios-sandbox",
+      "checked_at": "2026-02-05T04:33:46.157072+00:00",
+      "default": "deny",
+      "rule_counts": {
+        "total": 7,
+        "allow": 6,
+        "deny": 0,
+        "proposal": 1
+      },
+      "rules": [
+        {
+          "id": "SANDBOX-001",
+          "name": "allow-system-all",
+          "subject": "system",
+          "action": "*",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-002",
+          "name": "allow-human-all",
+          "subject": "human_operator",
+          "action": "*",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-003",
+          "name": "allow-tooling-read",
+          "subject": "tooling",
+          "action": "read",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-004",
+          "name": "allow-tooling-measure",
+          "subject": "tooling",
+          "action": "measure",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-005",
+          "name": "allow-tooling-export",
+          "subject": "tooling",
+          "action": "export",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-006",
+          "name": "allow-tooling-simulate",
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-030
+--------------------------------------------------------------------------------
+Title:   Adapter inspection shows AI prohibition
+Command: /usr/bin/python3 -m aictrl exec adapters
+Result:  PASS
+Duration: 0.053s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-004
+  NIST RMF:  AC-6(9)
+  Federal:   EO-14110-4.5
+
+Notes: AI is explicitly prohibited from serving as execution adapter.
+
+stdout:
+  {
+    "simulation": true,
+    "adapters": [
+      {
+        "type": "human_operator",
+        "status": "conceptual",
+        "description": "Human directly executing commands",
+        "controller": "human",
+        "trust_level": "highest",
+        "implemented": false,
+        "can_execute": true,
+        "requires_acknowledgement": true
+      },
+      {
+        "type": "ci",
+        "status": "conceptual",
+        "description": "CI/CD pipeline execution (human-configured)",
+        "controller": "ci_system",
+        "trust_level": "scoped",
+        "implemented": false,
+        "can_execute": true,
+        "requires_acknowledgement": true,
+        "scope_constrained": true
+      },
+      {
+        "type": "external",
+        "status": "future",
+        "description": "External system adapter (design placeholder)",
+        "controller": "external_operator",
+        "trust_level": "external",
+        "implemented": false,
+        "can_execute": false,
+        "requires_acknowledgement": true
+      }
+    ],
+    "ai_adapter_allowed": false,
+    "ai_prohibition": {
+      "reason": "AI can NEVER serve as an execution adapter",
+      "invariant_violations": [
+        "INV-004: AI never executes in production",
+        "INV-005: Human approval required for privileged operations",
+        "INV-007: AI cannot approve its own suggestions"
+      ],
+      "no_exceptions": true
+    },
+    "note": "Inspection only - no adapter operations performed"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-031
+--------------------------------------------------------------------------------
+Title:   Adapter inspection shows simulation flag
+Command: /usr/bin/python3 -m aictrl exec adapters
+Result:  PASS
+Duration: 0.052s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-INSPECT-001
+  NIST RMF:  CA-8
+  Federal:   EO-14110-4.3
+
+Notes: Adapter info is inspection-only, never executes.
+
+stdout:
+  {
+    "simulation": true,
+    "adapters": [
+      {
+        "type": "human_operator",
+        "status": "conceptual",
+        "description": "Human directly executing commands",
+        "controller": "human",
+        "trust_level": "highest",
+        "implemented": false,
+        "can_execute": true,
+        "requires_acknowledgement": true
+      },
+      {
+        "type": "ci",
+        "status": "conceptual",
+        "description": "CI/CD pipeline execution (human-configured)",
+        "controller": "ci_system",
+        "trust_level": "scoped",
+        "implemented": false,
+        "can_execute": true,
+        "requires_acknowledgement": true,
+        "scope_constrained": true
+      },
+      {
+        "type": "external",
+        "status": "future",
+        "description": "External system adapter (design placeholder)",
+        "controller": "external_operator",
+        "trust_level": "external",
+        "implemented": false,
+        "can_execute": false,
+        "requires_acknowledgement": true
+      }
+    ],
+    "ai_adapter_allowed": false,
+    "ai_prohibition": {
+      "reason": "AI can NEVER serve as an execution adapter",
+      "invariant_violations": [
+        "INV-004: AI never executes in production",
+        "INV-005: Human approval required for privileged operations",
+        "INV-007: AI cannot approve its own suggestions"
+      ],
+      "no_exceptions": true
+    },
+    "note": "Inspection only - no adapter operations performed"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-032
+--------------------------------------------------------------------------------
+Title:   Adapter inspection lists invariant violations for AI
+Command: /usr/bin/python3 -m aictrl exec adapters
+Result:  PASS
+Duration: 0.052s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-004
+  NIST RMF:  AC-6(9)
+  Federal:   EO-14110-4.5
+
+Notes: AI adapter prohibition cites specific invariant violations.
+
+stdout:
+  {
+    "simulation": true,
+    "adapters": [
+      {
+        "type": "human_operator",
+        "status": "conceptual",
+        "description": "Human directly executing commands",
+        "controller": "human",
+        "trust_level": "highest",
+        "implemented": false,
+        "can_execute": true,
+        "requires_acknowledgement": true
+      },
+      {
+        "type": "ci",
+        "status": "conceptual",
+        "description": "CI/CD pipeline execution (human-configured)",
+        "controller": "ci_system",
+        "trust_level": "scoped",
+        "implemented": false,
+        "can_execute": true,
+        "requires_acknowledgement": true,
+        "scope_constrained": true
+      },
+      {
+        "type": "external",
+        "status": "future",
+        "description": "External system adapter (design placeholder)",
+        "controller": "external_operator",
+        "trust_level": "external",
+        "implemented": false,
+        "can_execute": false,
+        "requires_acknowledgement": true
+      }
+    ],
+    "ai_adapter_allowed": false,
+    "ai_prohibition": {
+      "reason": "AI can NEVER serve as an execution adapter",
+      "invariant_violations": [
+        "INV-004: AI never executes in production",
+        "INV-005: Human approval required for privileged operations",
+        "INV-007: AI cannot approve its own suggestions"
+      ],
+      "no_exceptions": true
+    },
+    "note": "Inspection only - no adapter operations performed"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-040
+--------------------------------------------------------------------------------
+Title:   Boundary inspection shows execution barrier
+Command: /usr/bin/python3 -m aictrl exec boundary
+Result:  PASS
+Duration: 0.049s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-BOUNDARY-001
+  NIST RMF:  SC-7
+  Federal:   EO-14110-4.5
+
+Notes: Execution boundary is one-way and cannot be crossed by AI.
+
+stdout:
+  {
+    "simulation": true,
+    "boundaries": {
+      "simulation_barrier": {
+        "description": "One-way boundary between AIOS simulation and real execution",
+        "properties": {
+          "one_way": true,
+          "permanent": true,
+          "human_gated": true,
+          "evidence_generating": true,
+          "non_automatable": true
+        },
+        "crossable_by": [
+          "human_operator"
+        ],
+        "requires": [
+          "authorization_decision",
+          "invariant_snapshot",
+          "boot_identity",
+          "request_document",
+          "risk_assessment",
+          "human_acknowledgement"
+        ]
+      },
+      "aios_responsibilities": [
+        "policy_evaluation",
+        "evidence_generation",
+        "request_formulation",
+        "risk_identification",
+        "documentation",
+        "audit_trail"
+      ],
+      "aios_non_responsibilities": [
+        "actual_execution",
+        "execution_outcomes",
+        "system_state_changes",
+        "recovery_from_failures",
+        "adapter_behavior",
+        "credential_security"
+      ],
+      "operator_responsibilities": [
+        "execution_decision",
+        "actual_execution",
+        "result_reporting",
+        "backup_and_recovery",
+        "incident_response"
+      ]
+    },
+    "trust_propagation": "none",
+    "trust_stops_at": [
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-041
+--------------------------------------------------------------------------------
+Title:   Boundary inspection shows AI cannot cross
+Command: /usr/bin/python3 -m aictrl exec boundary
+Result:  PASS
+Duration: 0.050s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-004
+  NIST RMF:  SC-7
+  Federal:   EO-14110-4.5
+
+Notes: AI is explicitly prevented from crossing execution boundary.
+
+stdout:
+  {
+    "simulation": true,
+    "boundaries": {
+      "simulation_barrier": {
+        "description": "One-way boundary between AIOS simulation and real execution",
+        "properties": {
+          "one_way": true,
+          "permanent": true,
+          "human_gated": true,
+          "evidence_generating": true,
+          "non_automatable": true
+        },
+        "crossable_by": [
+          "human_operator"
+        ],
+        "requires": [
+          "authorization_decision",
+          "invariant_snapshot",
+          "boot_identity",
+          "request_document",
+          "risk_assessment",
+          "human_acknowledgement"
+        ]
+      },
+      "aios_responsibilities": [
+        "policy_evaluation",
+        "evidence_generation",
+        "request_formulation",
+        "risk_identification",
+        "documentation",
+        "audit_trail"
+      ],
+      "aios_non_responsibilities": [
+        "actual_execution",
+        "execution_outcomes",
+        "system_state_changes",
+        "recovery_from_failures",
+        "adapter_behavior",
+        "credential_security"
+      ],
+      "operator_responsibilities": [
+        "execution_decision",
+        "actual_execution",
+        "result_reporting",
+        "backup_and_recovery",
+        "incident_response"
+      ]
+    },
+    "trust_propagation": "none",
+    "trust_stops_at": [
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-042
+--------------------------------------------------------------------------------
+Title:   Boundary inspection shows human gate
+Command: /usr/bin/python3 -m aictrl exec boundary
+Result:  PASS
+Duration: 0.050s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-005
+  NIST RMF:  AC-3(7)
+  Federal:   EO-14110-4.5
+
+Notes: Execution requires human approval at boundary.
+
+stdout:
+  {
+    "simulation": true,
+    "boundaries": {
+      "simulation_barrier": {
+        "description": "One-way boundary between AIOS simulation and real execution",
+        "properties": {
+          "one_way": true,
+          "permanent": true,
+          "human_gated": true,
+          "evidence_generating": true,
+          "non_automatable": true
+        },
+        "crossable_by": [
+          "human_operator"
+        ],
+        "requires": [
+          "authorization_decision",
+          "invariant_snapshot",
+          "boot_identity",
+          "request_document",
+          "risk_assessment",
+          "human_acknowledgement"
+        ]
+      },
+      "aios_responsibilities": [
+        "policy_evaluation",
+        "evidence_generation",
+        "request_formulation",
+        "risk_identification",
+        "documentation",
+        "audit_trail"
+      ],
+      "aios_non_responsibilities": [
+        "actual_execution",
+        "execution_outcomes",
+        "system_state_changes",
+        "recovery_from_failures",
+        "adapter_behavior",
+        "credential_security"
+      ],
+      "operator_responsibilities": [
+        "execution_decision",
+        "actual_execution",
+        "result_reporting",
+        "backup_and_recovery",
+        "incident_response"
+      ]
+    },
+    "trust_propagation": "none",
+    "trust_stops_at": [
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-050
+--------------------------------------------------------------------------------
+Title:   Readiness shows blockers when not ready
+Command: /usr/bin/python3 -m aictrl exec readiness --request-id test-baseline-001
+Result:  PASS
+Duration: 0.053s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-READY-001
+  NIST RMF:  CA-7
+  Federal:   EO-14110-4.3
+
+Notes: Execution readiness explicitly enumerates missing preconditions.
+
+stdout:
+  {
+    "simulation": true,
+    "request_id": "test-baseline-001",
+    "readiness": {
+      "authorization": {
+        "status": "not_evaluated",
+        "required": true,
+        "note": "Simulation only - no real authorization"
+      },
+      "invariants": {
+        "status": "not_checked",
+        "required": true,
+        "note": "Simulation only - no real invariant check"
+      },
+      "boot_identity": {
+        "status": "not_bound",
+        "required": true,
+        "note": "Simulation only - no real boot identity"
+      },
+      "acknowledgement": {
+        "level_required": 3,
+        "status": "not_acknowledged",
+        "required": true,
+        "note": "Human acknowledgement required before boundary crossing"
+      },
+      "evidence": {
+        "status": "not_generated",
+        "required": true,
+        "note": "Would be generated on request creation"
+      }
+    },
+    "ready_for_crossing": false,
+    "blockers": [
+      "Authorization not evaluated",
+      "Invariants not checked",
+      "Boot identity not bound",
+      "Acknowledgement not received",
+      "Evidence not generated"
+    ],
+    "irreversibility": {
+      "assessment": "unknown",
+      "acknowledgement_level": "undetermined",
+      "note": "Irreversibility assessed on actual request"
+    },
+    "note": "Inspection only - no readiness operations performed"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-060
+--------------------------------------------------------------------------------
+Title:   Sandbox status fails safely when not running
+Command: /usr/bin/python3 -m aictrl sandbox status
+Result:  PASS
+Duration: 0.075s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-016
+  NIST RMF:  SI-17
+  Federal:   EO-14110-4.3
+
+Notes: Sandbox status returns gracefully even when sandbox not running.
+
+stdout:
+  {"sandbox": {"name": "aios-dev", "state": "stopped", "running": false, "started_at": null, "image_context": "aios-dev"}, "system": {"hostname": "aios-sandbox", "os_name": "AIOS Dev Sandbox 1.0.0", "kernel": "AIOS", "product": "AIOS Dev Sandbox"}, "safety": {"host_safety_enabled": true, "userspace_only": true, "no_real_proc": true, "no_real_sys": true, "no_privileged_ops": true}, "paths": {"sandbox_root": "/home/filterprooftravis/work/AIOS/sandbox/aios-dev", "rootfs": "/home/filterprooftravis/work/AIOS/sandbox/aios-dev/rootfs", "state_file": "/home/filterprooftravis/work/AIOS/sandbox/aios-dev/state/runtime.json", "config_file": "/home/filterprooftravis/work/AIOS/sandbox/aios-dev/config/sandbox.yaml"}, "non_goals": {"is_vm": false, "is_chroot": false, "is_container": false, "requires_root": false, "touches_real_proc": false, "touches_real_sys": false}}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-061
+--------------------------------------------------------------------------------
+Title:   Doctor command runs without sandbox
+Command: /usr/bin/python3 -m aictrl doctor
+Result:  PASS
+Duration: 0.202s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-016
+  NIST RMF:  CA-7
+  Federal:   EO-14110-4.3
+
+Notes: Doctor can run and report status without full sandbox environment.
+
+stdout:
+  {"timestamp_utc": "2026-02-05T04:33:46.642890+00:00", "execution_context": "aios-sandbox", "overall_status": "pass", "summary": {"passed": 10, "warned": 0, "failed": 0, "total": 10}, "checks": [{"id": "python_version_ok", "description": "Python version is 3.10 or higher", "status": "pass", "evidence": "Python 3.12.3", "remediation": null}, {"id": "disk_space_ok", "description": "Adequate disk space available", "status": "pass", "evidence": "942.9GB free of 1006.9GB (93.6% free)", "remediation": null}, {"id": "ssh_available", "description": "SSH client is available", "status": "pass", "evidence": "Found at /usr/bin/ssh", "remediation": null}, {"id": "git_available", "description": "Git is available", "status": "pass", "evidence": "Found at /usr/bin/git", "remediation": null}, {"id": "time_sync_status", "description": "System time is synchronized", "status": "pass", "evidence": "NTP synchronized", "remediation": null}, {"id": "host_safety_enabled", "description": "Host safety guard is active", "status": "pass", "evidence": "Enabled (env: (not set, defaults to enabled), denylist: 36 patterns)", "remediation": null}, {"id": "tailscale_cli_available", "description": "Tailscale CLI is available", "status": "pass", "evidence": "Found at /usr/bin/tailscale", "remediation": null}, {"id": "tailscaled_service_running", "description": "Tailscaled service is running", "status": "pass", "evidence": "Service_active=true", "remediation": null}, {"id": "tailscale_authenticated_or_connected", "description": "Tailscale is authenticated and connected", "status": "pass", "evidence": "Connected=true, IPs_present=true, count=1", "remediation": null}, {"id": "tailscale_interface_present", "description": "Tailscale network interface is present", "status": "pass", "evidence": "interface_detected=true", "remediation": null}], "invariants": {"context": "aios-sandbox", "context_detected": true, "overall_status": "pass", "summary": {"passed": 3, "failed": 0, "skipped": 16, "warned": 0, "total": 19}, "invariants": [{"invariant_id": "INV-001", "name": "Production Images Are Immutable", "category": "Immutability", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "runtime", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-002", "name": "Signed Artifacts Unmodifiable", "category": "Immutability", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "build", "mechanism": "test", "remediation": null}, {"invariant_id": "INV-003", "name": "Rollback Requires Verification", "category": "Immutability", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "runtime", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-004", "name": "AI Never Executes in Production", "category": "Human Authority", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "build", "mechanism": "denial", "remediation": null}, {"invariant_id": "INV-005", "name": "Human Approval Required", "category": "Human Authority", "status": "skip", "context": "aios-sandbox", "evidence": "No automated check available (human review required)", "enforcement": "cli", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-006", "name": "Human Intent Logged", "category": "Human Authority", "status": "skip", "context": "aios-sandbox", "evidence": "No automated check available (human review required)", "enforcement": "cli", "mechanism": "audit", "remediation": null}, {"invariant_id": "INV-007", "name": "AI Cannot Self-Approve", "category": "Human Authority", "status": "skip", "context": "aios-sandbox", "evidence": "No automated check available (human review required)", "enforcement": "cli", "mechanism": "denial", "remediation": null}, {"invariant_id": "INV-008", "name": "Evidence Cannot Be Disabled", "category": "Evidence", "status": "skip", "context": "aios-sandbox", "evidence": "No automated check available (human review required)", "enforcement": "runtime", "mechanism": "denial", "remediation": null}, {"invariant_id": "INV-009", "name": "Audit Logs Append-Only", "category": "Evidence", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "runtime", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-010", "name": "Secrets Never Logged", "category": "Evidence", "status": "pass", "context": "aios-sandbox", "evidence": "Redaction patterns defined (4 patterns)", "enforcement": "cli", "mechanism": "denial", "remediation": null}, {"invariant_id": "INV-011", "name": "Evidence Supports Attribution", "category": "Evidence", "status": "skip", "context": "aios-sandbox", "evidence": "No automated check available (human review required)", "enforcement": "cli", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-012", "name": "Dev Artifacts Never Reach Production", "category": "Isolation", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "build", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-013", "name": "Container Isolation Enforced", "category": "Isolation", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "runtime", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-014", "name": "Network Default Deny", "category": "Isolation", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "runtime", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-015", "name": "Cross-Context Trust Isolated", "category": "Isolation", "status": "skip", "context": "aios-sandbox", "evidence": "No automated check available (human review required)", "enforcement": "build", "mechanism": "denial", "remediation": null}, {"invariant_id": "INV-016", "name": "Failures Default to Deny", "category": "Defaults", "status": "pass", "context": "aios-sandbox", "evidence": "Host Safety Guard demonstrates fail-safe (deny by default)", "enforcement": "cli", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-017", "name": "No Default Passwords", "category": "Defaults", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "build", "mechanism": "assertion", "remediation": null}, {"invariant_id": "INV-018", "name": "No Default Secrets in Images", "category": "Defaults", "status": "skip", "context": "aios-sandbox", "evidence": "Not applicable in aios-sandbox context", "enforcement": "build", "mechanism": "test", "remediation": null}, {"invariant_id": "INV-019", "name": "Host Safety Guard Enabled", "category": "Defaults", "status": "pass", "context": "aios-sandbox", "evidence": "Host Safety Guard active (36 patterns)", "enforcement": "cli", "mechanism": "assertion", "remediation": null}]}}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-070
+--------------------------------------------------------------------------------
+Title:   Invalid subcommand is rejected
+Command: /usr/bin/python3 -m aictrl nonexistent
+Result:  PASS
+Note:    This is an EXPECTED FAILURE by design
+Duration: 0.051s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  CLI-VALIDATION-001
+  NIST RMF:  SI-10
+  Federal:   EO-14110-4.1
+
+Notes: Unknown subcommands are rejected with clear error. This is an expected failure by design.
+
+stdout:
+  (empty)
+
+stderr:
+  usage: aictrl [-h] [--version] [--i-accept-risk]
+                {version,status,demo,doctor,support-bundle,pr,sandbox,evidence,boot,attest,crypto,authz,exec}
+                ...
+  aictrl: error: argument command: invalid choice: 'nonexistent' (choose from 'version', 'status', 'demo', 'doctor', 'support-bundle', 'pr', 'sandbox', 'evidence', 'boot', 'attest', 'crypto', 'authz', 'exec')
+
+--------------------------------------------------------------------------------
+Test ID: BL-071
+--------------------------------------------------------------------------------
+Title:   Invalid nested subcommand is rejected
+Command: /usr/bin/python3 -m aictrl authz invalid
+Result:  PASS
+Note:    This is an EXPECTED FAILURE by design
+Duration: 0.052s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  CLI-VALIDATION-002
+  NIST RMF:  SI-10
+  Federal:   EO-14110-4.1
+
+Notes: Unknown nested subcommands are rejected. This is an expected failure by design.
+
+stdout:
+  (empty)
+
+stderr:
+  usage: aictrl authz [-h] {check,policy,enforcement} ...
+  aictrl authz: error: argument authz_command: invalid choice: 'invalid' (choose from 'check', 'policy', 'enforcement')
+
+--------------------------------------------------------------------------------
+Test ID: BL-080
+--------------------------------------------------------------------------------
+Title:   Host safety violation without flag
+Command: /usr/bin/python3 -m aictrl version
+Result:  FAIL
+Note:    This is an EXPECTED FAILURE by design
+Duration: 0.051s
+Exit Code: 1
+
+Spec Mapping:
+  Internal:  INV-019
+  NIST RMF:  CM-7
+  Federal:   EO-14110-4.5
+
+Notes: Host safety cannot be disabled without explicit acknowledgement. Expected failure.
+
+Failures:
+  - stderr missing: 'AICTRL-5010'
+
+stdout:
+  {"error": {"code": "AICTRL-5011", "message": "Incomplete host safety override", "cause": "AICTRL_HOST_SAFETY=0 requires --i-accept-risk flag", "remediation": ["To disable host safety, you must BOTH:", "  1. Set AICTRL_HOST_SAFETY=0", "  2. Pass --i-accept-risk flag", "This prevents accidental disabling of safety guards.", "Only disable on target systems, never on dev hosts."]}}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-081
+--------------------------------------------------------------------------------
+Title:   Host safety override requires both env and flag
+Command: /usr/bin/python3 -m aictrl --i-accept-risk version
+Result:  PASS
+Duration: 0.053s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-019
+  NIST RMF:  CM-7
+  Federal:   EO-14110-4.5
+
+Notes: Host safety flag alone (without env var) does not cause error.
+
+stdout:
+  {"name": "aictrl", "version": "1.6.0", "phase": 12, "commit": "49d8e14", "build_timestamp": "2026-02-05T04:33:47.001689+00:00", "build_id": null, "product": "AICtrl - Portable AI Control Plane", "enabled_capabilities": ["crypto_status_reporting", "crypto_readiness_reporting", "authz_policy_evaluation", "exec_inspection", "boot_simulation", "attest_simulation", "crypto_keygen", "crypto_sign", "crypto_verify", "crypto_pubkey", "boot_real_measurement", "boot_policy_verify", "attest_signed", "attest_verify_signature", "exec_propose", "exec_review", "exec_approve", "exec_run"]}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-090
+--------------------------------------------------------------------------------
+Title:   Version output is ASCII-only
+Command: /usr/bin/python3 -m aictrl version
+Result:  PASS
+Duration: 0.063s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OUTPUT-ASCII-001
+  NIST RMF:  AU-3
+  Federal:   EO-14110-4.1
+
+Notes: All output must be ASCII-only for audit compliance.
+
+stdout:
+  {"name": "aictrl", "version": "1.6.0", "phase": 12, "commit": "49d8e14", "build_timestamp": "2026-02-05T04:33:47.065182+00:00", "build_id": null, "product": "AICtrl - Portable AI Control Plane", "enabled_capabilities": ["crypto_status_reporting", "crypto_readiness_reporting", "authz_policy_evaluation", "exec_inspection", "boot_simulation", "attest_simulation", "crypto_keygen", "crypto_sign", "crypto_verify", "crypto_pubkey", "boot_real_measurement", "boot_policy_verify", "attest_signed", "attest_verify_signature", "exec_propose", "exec_review", "exec_approve", "exec_run"]}
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-091
+--------------------------------------------------------------------------------
+Title:   Authz output is ASCII-only
+Command: /usr/bin/python3 -m aictrl authz policy --context aios-sandbox
+Result:  PASS
+Duration: 0.052s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OUTPUT-ASCII-001
+  NIST RMF:  AU-3
+  Federal:   EO-14110-4.1
+
+Notes: Authorization output uses ASCII-only characters.
+
+stdout:
+  {
+    "policy_summary": {
+      "context": "aios-sandbox",
+      "checked_at": "2026-02-05T04:33:47.115839+00:00",
+      "default": "deny",
+      "rule_counts": {
+        "total": 7,
+        "allow": 6,
+        "deny": 0,
+        "proposal": 1
+      },
+      "rules": [
+        {
+          "id": "SANDBOX-001",
+          "name": "allow-system-all",
+          "subject": "system",
+          "action": "*",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-002",
+          "name": "allow-human-all",
+          "subject": "human_operator",
+          "action": "*",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-003",
+          "name": "allow-tooling-read",
+          "subject": "tooling",
+          "action": "read",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-004",
+          "name": "allow-tooling-measure",
+          "subject": "tooling",
+          "action": "measure",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-005",
+          "name": "allow-tooling-export",
+          "subject": "tooling",
+          "action": "export",
+          "effect": "ALLOW"
+        },
+        {
+          "id": "SANDBOX-006",
+          "name": "allow-tooling-simulate",
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-100
+--------------------------------------------------------------------------------
+Title:   Authz decisions include evidence ID
+Command: /usr/bin/python3 -m aictrl authz check --subject tooling --action read --context aios-sandbox
+Result:  PASS
+Duration: 0.053s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-008
+  NIST RMF:  AU-3
+  Federal:   EO-14110-4.3
+
+Notes: Every authorization decision generates auditable evidence.
+
+stdout:
+  {
+    "authorization_check": {
+      "decision": "ALLOW",
+      "evidence_id": "236d0974-c947-493e-8c7e-c44f734174d3",
+      "timestamp": "2026-02-05T04:33:47.170936+00:00",
+      "subject": {
+        "type": "tooling",
+        "valid": true
+      },
+      "action": {
+        "type": "read",
+        "target": null,
+        "valid": true
+      },
+      "context": "aios-sandbox",
+      "policy": {
+        "rule_matched": "SANDBOX-003",
+        "rule_name": "allow-tooling-read",
+        "rule_source": "builtin",
+        "rules_evaluated": 7
+      },
+      "reason": "Tooling can read in sandbox",
+      "bbail_version": "1.6.0",
+      "notices": [
+        {
+          "type": "disclaimer",
+          "severity": "critical",
+          "message": "Authorization is NOT authentication - does not verify identity"
+        },
+        {
+          "type": "disclaimer",
+          "severity": "normal",
+          "message": "Authorization decisions are deterministic and auditable"
+        },
+        {
+          "type": "info",
+          "severity": "normal",
+          "message": "See docs/security/AUTHORIZATION_MODEL.md for semantics"
+        }
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-101
+--------------------------------------------------------------------------------
+Title:   Authz decisions include timestamp
+Command: /usr/bin/python3 -m aictrl authz check --subject system --action read --context aios-sandbox
+Result:  PASS
+Duration: 0.050s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  INV-011
+  NIST RMF:  AU-8
+  Federal:   EO-14110-4.3
+
+Notes: Authorization decisions are timestamped for attribution.
+
+stdout:
+  {
+    "authorization_check": {
+      "decision": "ALLOW",
+      "evidence_id": "7fa7446c-94e9-46f5-8d35-52ab76aad2db",
+      "timestamp": "2026-02-05T04:33:47.221025+00:00",
+      "subject": {
+        "type": "system",
+        "valid": true
+      },
+      "action": {
+        "type": "read",
+        "target": null,
+        "valid": true
+      },
+      "context": "aios-sandbox",
+      "policy": {
+        "rule_matched": "SANDBOX-001",
+        "rule_name": "allow-system-all",
+        "rule_source": "builtin",
+        "rules_evaluated": 7
+      },
+      "reason": "System operations allowed in sandbox",
+      "bbail_version": "1.6.0",
+      "notices": [
+        {
+          "type": "disclaimer",
+          "severity": "critical",
+          "message": "Authorization is NOT authentication - does not verify identity"
+        },
+        {
+          "type": "disclaimer",
+          "severity": "normal",
+          "message": "Authorization decisions are deterministic and auditable"
+        },
+        {
+          "type": "info",
+          "severity": "normal",
+          "message": "See docs/security/AUTHORIZATION_MODEL.md for semantics"
+        }
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-110
+--------------------------------------------------------------------------------
+Title:   Policy evaluation is deterministic
+Command: /usr/bin/python3 -m aictrl authz check --subject tooling --action read --context aios-sandbox
+Result:  PASS
+Duration: 0.053s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  POLICY-DETERMINISM-001
+  NIST RMF:  SC-5
+  Federal:   EO-14110-4.2
+
+Notes: Same inputs must produce same decision (excluding timestamps/IDs).
+
+stdout:
+  {
+    "authorization_check": {
+      "decision": "ALLOW",
+      "evidence_id": "0f6daeec-9a49-4243-9836-025b9af42daf",
+      "timestamp": "2026-02-05T04:33:47.272955+00:00",
+      "subject": {
+        "type": "tooling",
+        "valid": true
+      },
+      "action": {
+        "type": "read",
+        "target": null,
+        "valid": true
+      },
+      "context": "aios-sandbox",
+      "policy": {
+        "rule_matched": "SANDBOX-003",
+        "rule_name": "allow-tooling-read",
+        "rule_source": "builtin",
+        "rules_evaluated": 7
+      },
+      "reason": "Tooling can read in sandbox",
+      "bbail_version": "1.6.0",
+      "notices": [
+        {
+          "type": "disclaimer",
+          "severity": "critical",
+          "message": "Authorization is NOT authentication - does not verify identity"
+        },
+        {
+          "type": "disclaimer",
+          "severity": "normal",
+          "message": "Authorization decisions are deterministic and auditable"
+        },
+        {
+          "type": "info",
+          "severity": "normal",
+          "message": "See docs/security/AUTHORIZATION_MODEL.md for semantics"
+        }
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-120
+--------------------------------------------------------------------------------
+Title:   Keygen without --dangerous fails safely
+Command: /usr/bin/python3 -m aictrl crypto keygen --out /tmp/aictrl-test-bl120.pem
+Result:  PASS
+Duration: 0.049s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  CRYPTO-KEYGEN-GATE-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Key generation requires explicit --dangerous flag as safety gate.
+
+stdout:
+  {
+    "success": false,
+    "error": "Key generation requires --dangerous flag",
+    "hint": "This is a safety gate. Use 'aictrl crypto keygen --out <path> --dangerous' to proceed.",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-121
+--------------------------------------------------------------------------------
+Title:   Keygen with --dangerous creates valid key
+Command: /usr/bin/python3 -m aictrl crypto keygen --out /tmp/aictrl-test-bl121.pem --dangerous --force
+Result:  PASS
+Duration: 0.137s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  CRYPTO-KEYGEN-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Ed25519 key generation produces valid PEM key with correct permissions.
+
+stdout:
+  {
+    "success": true,
+    "algorithm": "ed25519",
+    "private_key_path": "/tmp/aictrl-test-bl121.pem",
+    "public_key_path": "/tmp/aictrl-test-bl121.pem.pub",
+    "private_key_permissions": "0600",
+    "format": "PEM (PKCS8)",
+    "warning": "Keep the private key secure. Never share or commit to version control."
+  }
+
+stderr:
+  ================================================================================
+                                *** WARNING ***
+  ================================================================================
+  
+  You are about to generate a cryptographic private key.
+  
+  This operation:
+    - Creates a private key file that MUST be kept secure
+    - Cannot be undone - if the key is lost, data signed with it cannot be verified
+    - Should only be done on a trusted, secure system
+  
+  The private key will be written with permissions 0600 (owner read/write only).
+  
+  NEVER:
+    - Share the private key
+    - Commit the private key to version control
+    - Store the private key on untrusted systems
+    - Use this key for production without proper key management procedures
+  
+  ================================================================================
+
+--------------------------------------------------------------------------------
+Test ID: BL-122
+--------------------------------------------------------------------------------
+Title:   Sign and verify roundtrip succeeds
+Command: bash -c rm -f /tmp/aictrl-bl122-* && echo 'test data' > /tmp/aictrl-bl122-data.txt && /usr/bin/python3 -m aictrl crypto keygen --out /tmp/aictrl-bl122-key.pem --dangerous --force 2>/dev/null && /usr/bin/python3 -m aictrl crypto sign --key /tmp/aictrl-bl122-key.pem --in /tmp/aictrl-bl122-data.txt --out /tmp/aictrl-bl122-data.sig && /usr/bin/python3 -m aictrl crypto verify --pubkey /tmp/aictrl-bl122-key.pem.pub --in /tmp/aictrl-bl122-data.txt --sig /tmp/aictrl-bl122-data.sig
+Result:  PASS
+Duration: 0.285s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  CRYPTO-SIGN-VERIFY-001
+  NIST RMF:  SC-13
+  Federal:   EO-14110-4.2
+
+Notes: Full Ed25519 sign/verify roundtrip produces valid signature.
+
+stdout:
+  {
+    "success": true,
+    "algorithm": "ed25519",
+    "private_key_path": "/tmp/aictrl-bl122-key.pem",
+    "public_key_path": "/tmp/aictrl-bl122-key.pem.pub",
+    "private_key_permissions": "0600",
+    "format": "PEM (PKCS8)",
+    "warning": "Keep the private key secure. Never share or commit to version control."
+  }
+  {
+    "success": true,
+    "algorithm": "ed25519",
+    "input": "/tmp/aictrl-bl122-data.txt",
+    "signature": "/tmp/aictrl-bl122-data.sig",
+    "bytes": 64,
+    "encoding": "base64"
+  }
+  {
+    "valid": true,
+    "algorithm": "ed25519",
+    "input": "/tmp/aictrl-bl122-data.txt",
+    "sig": "/tmp/aictrl-bl122-data.sig",
+    "exit_code": 0
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-123
+--------------------------------------------------------------------------------
+Title:   Sign with missing key fails safely
+Command: /usr/bin/python3 -m aictrl crypto sign --key /tmp/nonexistent-key-bl123.pem --in /tmp/aictrl-bl122-data.txt --out /tmp/aictrl-bl123.sig
+Result:  PASS
+Duration: 0.056s
+Exit Code: 1
+
+Spec Mapping:
+  Internal:  CRYPTO-ERROR-001
+  NIST RMF:  SC-13
+  Federal:   EO-14110-4.2
+
+Notes: Missing key produces clear error message.
+
+stdout:
+  {
+    "success": false,
+    "error": "Private key file not found: /tmp/nonexistent-key-bl123.pem",
+    "exit_code": 1
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-200
+--------------------------------------------------------------------------------
+Title:   Boot measure with mock source returns valid output
+Command: /usr/bin/python3 -m aictrl boot measure --source mock
+Result:  PASS
+Duration: 0.051s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  BOOT-MEASURE-MOCK-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Mock boot measurement returns deterministic PCR 10 data.
+
+stdout:
+  {
+    "source": "mock",
+    "simulated": true,
+    "timestamp_utc": "2026-02-05T04:33:47.851774+00:00",
+    "measurement_log": {
+      "version": "1.0",
+      "source": "mock",
+      "total_entries": 1,
+      "parsed_entries": 1,
+      "measurements": [
+        {
+          "pcr": 10,
+          "template_hash": "7a7379b08c5fa41ff0b41ecc6203aafa24aaaf434c0fba7171c117f6413dc05a",
+          "template_name": "ima-ng",
+          "algorithm": "sha256",
+          "hash": "c4668835804bd069eb80982fd1146b556ca7f0f226340d489e20cce5606436d1",
+          "filename_hint": "/mock/aictrl/test",
+          "line_number": 1
+        }
+      ]
+    },
+    "pcr10_summary": {
+      "entry_count": 1,
+      "combined_hash": "c4668835804bd069eb80982fd1146b556ca7f0f226340d489e20cce5606436d1",
+      "algorithm": "SHA-256"
+    },
+    "warning": "Mock measurement - not from real TPM/IMA. For testing only."
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-201
+--------------------------------------------------------------------------------
+Title:   Boot measure defaults to mock source
+Command: /usr/bin/python3 -m aictrl boot measure
+Result:  PASS
+Duration: 0.055s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  BOOT-MEASURE-DEFAULT-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Default --source is mock for safe operation.
+
+stdout:
+  {
+    "source": "mock",
+    "simulated": true,
+    "timestamp_utc": "2026-02-05T04:33:47.906907+00:00",
+    "measurement_log": {
+      "version": "1.0",
+      "source": "mock",
+      "total_entries": 1,
+      "parsed_entries": 1,
+      "measurements": [
+        {
+          "pcr": 10,
+          "template_hash": "7a7379b08c5fa41ff0b41ecc6203aafa24aaaf434c0fba7171c117f6413dc05a",
+          "template_name": "ima-ng",
+          "algorithm": "sha256",
+          "hash": "c4668835804bd069eb80982fd1146b556ca7f0f226340d489e20cce5606436d1",
+          "filename_hint": "/mock/aictrl/test",
+          "line_number": 1
+        }
+      ]
+    },
+    "pcr10_summary": {
+      "entry_count": 1,
+      "combined_hash": "c4668835804bd069eb80982fd1146b556ca7f0f226340d489e20cce5606436d1",
+      "algorithm": "SHA-256"
+    },
+    "warning": "Mock measurement - not from real TPM/IMA. For testing only."
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-202
+--------------------------------------------------------------------------------
+Title:   Boot verify with policy validates measurement log
+Command: bash -c rm -f /tmp/aictrl-bl202-* && /usr/bin/python3 -m aictrl boot measure --source mock > /tmp/aictrl-bl202-log.json && echo '{"version": "1.0", "rules": [{"name": "allow-all", "match": {"filename_hint": ".*"}, "action": "allow"}], "default_action": "deny"}' > /tmp/aictrl-bl202-policy.json && /usr/bin/python3 -m aictrl boot verify --log /tmp/aictrl-bl202-log.json --policy /tmp/aictrl-bl202-policy.json
+Result:  PASS
+Duration: 0.112s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  BOOT-VERIFY-POLICY-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Policy-based verification validates measurement log against rules.
+
+stdout:
+  {
+    "valid": true,
+    "timestamp_utc": "2026-02-05T04:33:48.016904+00:00",
+    "log_path": "/tmp/aictrl-bl202-log.json",
+    "policy_path": "/tmp/aictrl-bl202-policy.json",
+    "policy_version": "1.0",
+    "summary": {
+      "total_measurements": 1,
+      "allowed": 1,
+      "denied": 0
+    },
+    "violations": null
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-210
+--------------------------------------------------------------------------------
+Title:   Attest generate help shows signing options
+Command: /usr/bin/python3 -m aictrl attest generate --help
+Result:  PASS
+Duration: 0.054s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  ATTEST-CLI-HELP-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Attest generate help documents --key and --dangerous options.
+
+stdout:
+  usage: aictrl attest generate [-h] [--context {aios-sandbox}] [--key KEY]
+                                [--dangerous] [--out OUT]
+                                [--evidence-bundle EVIDENCE_BUNDLE] [--pretty]
+  
+  options:
+    -h, --help            show this help message and exit
+    --context {aios-sandbox}
+                          Execution context (only aios-sandbox supported)
+    --key KEY             Path to private key for signed attestation (Phase 11)
+    --dangerous           Required for signed attestation - confirms
+                          understanding of implications
+    --out OUT             Output file path for attestation statement
+    --evidence-bundle EVIDENCE_BUNDLE
+                          Path to evidence bundle to bind to attestation
+    --pretty              Pretty-print JSON output
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-211
+--------------------------------------------------------------------------------
+Title:   Attest verify help shows pubkey option
+Command: /usr/bin/python3 -m aictrl attest verify --help
+Result:  PASS
+Duration: 0.050s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  ATTEST-CLI-HELP-002
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Attest verify help documents --pubkey option and no trust store.
+
+stdout:
+  usage: aictrl attest verify [-h] --statement STATEMENT [--pubkey PUBKEY]
+                              [--allow-stale] [--pretty]
+  
+  options:
+    -h, --help            show this help message and exit
+    --statement STATEMENT
+                          Path to attestation statement JSON file
+    --pubkey PUBKEY       Path to public key for signature verification (Phase
+                          11, no trust store)
+    --allow-stale         Accept statements that don't match current state
+    --pretty              Pretty-print JSON output
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-212
+--------------------------------------------------------------------------------
+Title:   Verify with missing statement fails safely
+Command: /usr/bin/python3 -m aictrl attest verify --statement /tmp/nonexistent-statement-bl212.json --pubkey /tmp/nonexistent-key-bl212.pem
+Result:  PASS
+Duration: 0.051s
+Exit Code: 1
+
+Spec Mapping:
+  Internal:  ATTEST-VERIFY-SAFE-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Missing statement file produces clear error message.
+
+stdout:
+  {
+    "error": {
+      "code": "AICTRL-8012",
+      "message": "Statement file not found: /tmp/nonexistent-statement-bl212.json",
+      "cause": "File does not exist",
+      "remediation": [
+        "Check the file path"
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-213
+--------------------------------------------------------------------------------
+Title:   Verify with missing pubkey fails safely
+Command: bash -c echo '{"attestation_statement": {"signature": {"signed": true}}}' > /tmp/aictrl-bl213-stmt.json && /usr/bin/python3 -m aictrl attest verify --statement /tmp/aictrl-bl213-stmt.json --pubkey /tmp/nonexistent-key-bl213.pem
+Result:  PASS
+Duration: 0.054s
+Exit Code: 1
+
+Spec Mapping:
+  Internal:  ATTEST-VERIFY-SAFE-002
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Missing public key file produces clear error message.
+
+stdout:
+  {
+    "error": {
+      "code": "AICTRL-8012",
+      "message": "Public key not found: /tmp/nonexistent-key-bl213.pem",
+      "cause": "File does not exist",
+      "remediation": [
+        "Check the public key path"
+      ]
+    }
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-214
+--------------------------------------------------------------------------------
+Title:   Missing --dangerous fails safely
+Command: bash -c rm -f /tmp/aictrl-bl214-* && /usr/bin/python3 -m aictrl crypto keygen --out /tmp/aictrl-bl214-key.pem --dangerous --force 2>/dev/null && /usr/bin/python3 -m aictrl attest generate --key /tmp/aictrl-bl214-key.pem
+Result:  PASS
+Duration: 0.145s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  ATTEST-DANGEROUS-GATE-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Signed attestation requires explicit --dangerous flag as safety gate.
+
+stdout:
+  {
+    "success": true,
+    "algorithm": "ed25519",
+    "private_key_path": "/tmp/aictrl-bl214-key.pem",
+    "public_key_path": "/tmp/aictrl-bl214-key.pem.pub",
+    "private_key_permissions": "0600",
+    "format": "PEM (PKCS8)",
+    "warning": "Keep the private key secure. Never share or commit to version control."
+  }
+  {
+    "success": false,
+    "error": "Signed attestation requires --dangerous flag",
+    "error_code": "AICTRL-8011",
+    "remediation": [
+      "Add --dangerous flag to confirm you understand the implications",
+      "Use 'aictrl attest generate --key <path> --dangerous'"
+    ],
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-220
+--------------------------------------------------------------------------------
+Title:   Propose creates valid JSON with content_hash and status=proposed
+Command: bash -c rm -f /tmp/aictrl-bl220-proposal.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl220-proposal.json && cat /tmp/aictrl-bl220-proposal.json
+Result:  PASS
+Duration: 0.060s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-PROPOSE-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Propose creates valid proposal JSON with hash and status.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "9a716d2c-1d4c-46f4-90ed-180b1f18bd2d",
+    "content_hash": "d2ad13fac5fdb0d46fa26769004d9a082252c123e22b412dd0e7d34ad7199716",
+    "output_path": "/tmp/aictrl-bl220-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "adapter_info": {
+      "dangerous": false,
+      "description": "No-operation adapter for testing",
+      "name": "noop"
+    },
+    "content_hash": "d2ad13fac5fdb0d46fa26769004d9a082252c123e22b412dd0e7d34ad7199716",
+    "created_at": "2026-02-05T04:33:48.427009+00:00",
+    "dangerous_requested": false,
+    "phase": 12,
+    "policy_decision_id": null,
+    "proposal_id": "9a716d2c-1d4c-46f4-90ed-180b1f18bd2d",
+    "request": {
+      "action": "read",
+      "adapter": "noop",
+      "inputs": {},
+      "subject": "",
+      "target": "/etc/hosts"
+    },
+    "schema_version": "1.0",
+    "status": "proposed"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-221
+--------------------------------------------------------------------------------
+Title:   Propose without --dangerous fails for dangerous adapter
+Command: /usr/bin/python3 -m aictrl exec propose --action write --target /tmp/test.txt --adapter file-write --out /tmp/aictrl-bl221.json
+Result:  PASS
+Duration: 0.050s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-DANGEROUS-GATE-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Dangerous adapters require explicit --dangerous flag.
+
+stdout:
+  {
+    "success": false,
+    "error": "Dangerous operation requires --dangerous flag",
+    "error_code": "AICTRL-9003",
+    "hint": "Adapter 'file-write' with action 'write' requires --dangerous",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-222
+--------------------------------------------------------------------------------
+Title:   Review detects tampered proposal (hash mismatch)
+Command: bash -c rm -f /tmp/aictrl-bl222-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl222-proposal.json 2>/dev/null && sed 's/\/etc\/hosts/\/etc\/passwd/' /tmp/aictrl-bl222-proposal.json > /tmp/aictrl-bl222-tampered.json && /usr/bin/python3 -m aictrl exec review --proposal /tmp/aictrl-bl222-tampered.json
+Result:  PASS
+Duration: 0.111s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-TAMPER-DETECT-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Review detects content tampering via hash verification.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "50850c1f-d63a-4c07-8695-0780efaca917",
+    "content_hash": "641b289c97a2be91cdae373ce7916ede73c90c3271cab3a19df5e35498c6ea30",
+    "output_path": "/tmp/aictrl-bl222-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": false,
+    "valid": false,
+    "error": "Content hash mismatch - proposal may be tampered",
+    "error_code": "AICTRL-9006",
+    "hint": "Proposal content does not match stored hash",
+    "computed_hash": "0984f2b83e75bb24f5b7f1d86f7e77c66606d48cf1f3387e074392e3e4fe1267",
+    "stored_hash": "641b289c97a2be91cdae373ce7916ede73c90c3271cab3a19df5e35498c6ea30",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-223
+--------------------------------------------------------------------------------
+Title:   Review of valid proposal succeeds with proposal_id
+Command: bash -c rm -f /tmp/aictrl-bl223-proposal.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl223-proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec review --proposal /tmp/aictrl-bl223-proposal.json
+Result:  PASS
+Duration: 0.102s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-REVIEW-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Valid proposal review succeeds with verified hash.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "91da7447-45b0-4362-920d-6ed700c69985",
+    "content_hash": "0ec618cc31c3e26581f3ecd8652f485bfb7e1273a1166eadc0d175b816567faf",
+    "output_path": "/tmp/aictrl-bl223-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "valid": true,
+    "reviewed_at": "2026-02-05T04:33:48.696956+00:00",
+    "proposal_id": "91da7447-45b0-4362-920d-6ed700c69985",
+    "content_hash": "0ec618cc31c3e26581f3ecd8652f485bfb7e1273a1166eadc0d175b816567faf",
+    "hash_verified": true,
+    "status": "proposed",
+    "phase": 12,
+    "dangerous_requested": false,
+    "request_summary": {
+      "action": "read",
+      "target": "/etc/hosts",
+      "adapter": "noop",
+      "subject": ""
+    },
+    "adapter_info": {
+      "dangerous": false,
+      "description": "No-operation adapter for testing",
+      "name": "noop"
+    },
+    "created_at": "2026-02-05T04:33:48.647067+00:00",
+    "human_summary": "Proposal 91da7447-45b0-4362-920d-6ed700c69985: read on /etc/hosts via noop adapter"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-230
+--------------------------------------------------------------------------------
+Title:   Approve succeeds for valid proposal
+Command: bash -c rm -f /tmp/aictrl-bl230-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl230-proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl230-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl230-approval.json
+Result:  PASS
+Duration: 0.107s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-APPROVE-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Approval creates valid approval artifact binding to proposal.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "34e24921-acf8-4749-9afd-29d1087cd629",
+    "content_hash": "8e2d0d6d13799826c8ba126e45ee80350a533924670e7823573e07853170bfc7",
+    "output_path": "/tmp/aictrl-bl230-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "4eb8996d-1364-4771-baa4-3d5661c3900d",
+    "proposal_id": "34e24921-acf8-4749-9afd-29d1087cd629",
+    "content_hash": "8e2d0d6d13799826c8ba126e45ee80350a533924670e7823573e07853170bfc7",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:48.805035+00:00",
+    "output_path": "/tmp/aictrl-bl230-approval.json",
+    "status": "approved"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-231
+--------------------------------------------------------------------------------
+Title:   Approve fails for tampered proposal
+Command: bash -c rm -f /tmp/aictrl-bl231-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl231-proposal.json 2>/dev/null && sed 's/\/etc\/hosts/\/etc\/passwd/' /tmp/aictrl-bl231-proposal.json > /tmp/aictrl-bl231-tampered.json && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl231-tampered.json --approved-by 'baseline-test' --out /tmp/aictrl-bl231-approval.json
+Result:  PASS
+Duration: 0.105s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-APPROVE-TAMPER-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Cannot approve tampered proposal - hash mismatch detected.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "793a0f4e-9504-4ab9-ad86-e5869bb318ff",
+    "content_hash": "debc7cc9ca81d3315c2b4ce8217af5087dfbe8ea4eb27b3cd58753f97f25db6d",
+    "output_path": "/tmp/aictrl-bl231-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": false,
+    "error": "Proposal review failed: Content hash mismatch - proposal may be tampered",
+    "error_code": "AICTRL-9006",
+    "hint": "Proposal content does not match stored hash",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-232
+--------------------------------------------------------------------------------
+Title:   Run fails without approval
+Command: bash -c rm -f /tmp/aictrl-bl232-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl232-proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl232-proposal.json --approval /tmp/nonexistent-approval.json
+Result:  PASS
+Duration: 0.110s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-RUN-NO-APPROVAL-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Cannot run without valid approval artifact.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "13cb5f62-d21e-4152-9372-6a27b886bdbd",
+    "content_hash": "6f50256a8d0f373f16cda3f7b24c370e23269f904a3d52c78f20681816a2689a",
+    "output_path": "/tmp/aictrl-bl232-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": false,
+    "error": "Approval file not found: /tmp/nonexistent-approval.json",
+    "error_code": "AICTRL-9013",
+    "hint": "Run 'exec approve' first to create approval",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-233
+--------------------------------------------------------------------------------
+Title:   Run fails with mismatched approval hash
+Command: bash -c rm -f /tmp/aictrl-bl233-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl233-proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl233-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl233-approval.json 2>/dev/null && sed 's/\/etc\/hosts/\/etc\/passwd/' /tmp/aictrl-bl233-proposal.json > /tmp/aictrl-bl233-modified.json && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl233-modified.json --approval /tmp/aictrl-bl233-approval.json
+Result:  PASS
+Duration: 0.170s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-RUN-HASH-MISMATCH-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Run fails if proposal modified after approval.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "5f4d00d7-84ec-4a74-a24b-355a81c2dfd4",
+    "content_hash": "8d967b1790fe12481de90d139d54f25b0d143aa70586ed2898adca4cad6d5677",
+    "output_path": "/tmp/aictrl-bl233-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "0120d4f3-4244-4fa8-8761-95f799c14a77",
+    "proposal_id": "5f4d00d7-84ec-4a74-a24b-355a81c2dfd4",
+    "content_hash": "8d967b1790fe12481de90d139d54f25b0d143aa70586ed2898adca4cad6d5677",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.135696+00:00",
+    "output_path": "/tmp/aictrl-bl233-approval.json",
+    "status": "approved"
+  }
+  {
+    "success": false,
+    "error": "Proposal validation failed: Content hash mismatch - proposal may be tampered",
+    "error_code": "AICTRL-9006",
+    "hint": "Proposal content does not match stored hash",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-234
+--------------------------------------------------------------------------------
+Title:   Run fails without --dangerous for dangerous adapter
+Command: bash -c rm -f /tmp/aictrl-bl234-*.json && /usr/bin/python3 -m aictrl exec propose --action write --target /tmp/aictrl-bl234-test.txt --adapter file-write --out /tmp/aictrl-bl234-proposal.json --dangerous 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl234-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl234-approval.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl234-proposal.json --approval /tmp/aictrl-bl234-approval.json
+Result:  PASS
+Duration: 0.160s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-RUN-DANGEROUS-GATE-001
+  NIST RMF:  SC-12
+  Federal:   EO-14110-4.2
+
+Notes: Dangerous operations require --dangerous at BOTH propose AND run.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "b9fab454-f422-4f7a-aa77-ec5320089cef",
+    "content_hash": "46b13dc50d46ed4c1baf6ecaa80e2c3de48ad7693a31ebbb9dd76449b1e2fc7a",
+    "output_path": "/tmp/aictrl-bl234-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": true,
+    "adapter": "file-write",
+    "action": "write"
+  }
+  {
+    "success": true,
+    "approval_id": "a265259c-ade7-4999-a846-56f80cf5b7a7",
+    "proposal_id": "b9fab454-f422-4f7a-aa77-ec5320089cef",
+    "content_hash": "46b13dc50d46ed4c1baf6ecaa80e2c3de48ad7693a31ebbb9dd76449b1e2fc7a",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.294393+00:00",
+    "output_path": "/tmp/aictrl-bl234-approval.json",
+    "status": "approved"
+  }
+  {
+    "success": false,
+    "error": "Dangerous operation requires --dangerous flag at run time",
+    "error_code": "AICTRL-9003",
+    "hint": "Add --dangerous flag to exec run command",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-235
+--------------------------------------------------------------------------------
+Title:   Run succeeds for safe adapter with valid approval
+Command: bash -c rm -f /tmp/aictrl-bl235-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl235-proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl235-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl235-approval.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl235-proposal.json --approval /tmp/aictrl-bl235-approval.json
+Result:  PASS
+Duration: 0.156s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-RUN-SUCCESS-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Safe adapter executes successfully with valid approval chain.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "7209bf4f-f1ae-4172-bd1c-34a8af416e93",
+    "content_hash": "d2b2d6d58eb9213b9f06663b2627d0f0e7f8a1ef5e11ce7b00c1b6bd34cfa061",
+    "output_path": "/tmp/aictrl-bl235-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "26e51c93-64a8-407c-9f40-9d0018cbac89",
+    "proposal_id": "7209bf4f-f1ae-4172-bd1c-34a8af416e93",
+    "content_hash": "d2b2d6d58eb9213b9f06663b2627d0f0e7f8a1ef5e11ce7b00c1b6bd34cfa061",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.454866+00:00",
+    "output_path": "/tmp/aictrl-bl235-approval.json",
+    "status": "approved"
+  }
+  {
+    "success": true,
+    "adapter": "noop",
+    "action": "read",
+    "target": "/etc/hosts",
+    "executed_at": "2026-02-05T04:33:49.505773+00:00",
+    "result": {
+      "operation": "noop",
+      "message": "No-operation adapter executed successfully"
+    },
+    "proposal_id": "7209bf4f-f1ae-4172-bd1c-34a8af416e93",
+    "approval_id": "26e51c93-64a8-407c-9f40-9d0018cbac89",
+    "content_hash": "d2b2d6d58eb9213b9f06663b2627d0f0e7f8a1ef5e11ce7b00c1b6bd34cfa061",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.454866+00:00",
+    "receipt_id": "9d64650b-4123-471a-9979-bf58cad24668",
+    "receipt_created": true,
+    "attestation_id": "a76736cd-3d1b-4418-accd-62d70ea7433a",
+    "attestation_created": true,
+    "receipt_path": "/tmp/receipt-9d64650b-4123-471a-9979-bf58cad24668.json",
+    "attestation_path": "/tmp/attestation-a76736cd-3d1b-4418-accd-62d70ea7433a.json"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-236
+--------------------------------------------------------------------------------
+Title:   Run blocked for unknown adapter
+Command: bash -c rm -f /tmp/aictrl-bl236-*.json && python3 -c 'import hashlib,json; c={"action":"read","target":"/tmp","adapter":"unknown-adapter","subject":"","inputs":{},"created_at":"2026-01-01T00:00:00Z"}; h=hashlib.sha256(json.dumps(c,sort_keys=True,separators=(",",":")).encode()).hexdigest(); p={"schema_version":"1.0","proposal_id":"test-bl236","created_at":"2026-01-01T00:00:00Z","phase":12,"status":"proposed","content_hash":h,"dangerous_requested":False,"request":{"action":"read","target":"/tmp","adapter":"unknown-adapter","subject":"","inputs":{}}}; a={"schema_version":"1.0","approval_id":"test-approval-bl236","approved_at":"2026-01-01T00:00:00Z","approved_by":"test","proposal_id":"test-bl236","content_hash":h,"status":"approved"}; json.dump(p,open("/tmp/aictrl-bl236-proposal.json","w")); json.dump(a,open("/tmp/aictrl-bl236-approval.json","w"))' && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl236-proposal.json --approval /tmp/aictrl-bl236-approval.json
+Result:  PASS
+Duration: 0.076s
+Exit Code: 2
+
+Spec Mapping:
+  Internal:  EXEC-RUN-ADAPTER-DENY-001
+  NIST RMF:  SC-7
+  Federal:   EO-14110-4.2
+
+Notes: Unknown adapters are blocked by default-deny allowlist.
+
+stdout:
+  {
+    "success": false,
+    "error": "Adapter 'unknown-adapter' not in allowlist. Allowed: ['noop', 'file-read', 'file-write', 'shell-readonly', 'shell-execute']",
+    "error_code": "AICTRL-9004",
+    "hint": "Adapter not in allowlist",
+    "exit_code": 2
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-237
+--------------------------------------------------------------------------------
+Title:   Approval binds to proposal_id and content_hash
+Command: bash -c rm -f /tmp/aictrl-bl237-*.json && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl237-proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl237-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl237-approval.json && cat /tmp/aictrl-bl237-approval.json
+Result:  PASS
+Duration: 0.118s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  EXEC-APPROVE-BINDING-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.2
+
+Notes: Approval artifact contains proposal_id and content_hash binding.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "22482d32-393c-4aa6-bcf1-c7062513bdf9",
+    "content_hash": "a502b06791ad2fcb8d5420b4432a8fb74cde55b60aa382f3cdc57eb1bd195b76",
+    "output_path": "/tmp/aictrl-bl237-proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "57183885-ee52-4027-854d-68c245254b18",
+    "proposal_id": "22482d32-393c-4aa6-bcf1-c7062513bdf9",
+    "content_hash": "a502b06791ad2fcb8d5420b4432a8fb74cde55b60aa382f3cdc57eb1bd195b76",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.699247+00:00",
+    "output_path": "/tmp/aictrl-bl237-approval.json",
+    "status": "approved"
+  }
+  {
+    "approval_id": "57183885-ee52-4027-854d-68c245254b18",
+    "approved_at": "2026-02-05T04:33:49.699247+00:00",
+    "approved_by": "baseline-test",
+    "content_hash": "a502b06791ad2fcb8d5420b4432a8fb74cde55b60aa382f3cdc57eb1bd195b76",
+    "dangerous_requested": false,
+    "phase": 12,
+    "proposal_id": "22482d32-393c-4aa6-bcf1-c7062513bdf9",
+    "proposal_path": "/tmp/aictrl-bl237-proposal.json",
+    "request_summary": {
+      "action": "read",
+      "adapter": "noop",
+      "subject": "",
+      "target": "/etc/hosts"
+    },
+    "schema_version": "1.0",
+    "status": "approved"
+  }
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-240
+--------------------------------------------------------------------------------
+Title:   Exec run creates execution receipt before adapter execution
+Command: bash -c rm -rf /tmp/aictrl-bl240 && mkdir -p /tmp/aictrl-bl240 && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl240/proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl240/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl240/approval.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl240/proposal.json --approval /tmp/aictrl-bl240/approval.json && ls /tmp/aictrl-bl240/receipt-*.json
+Result:  PASS
+Duration: 0.162s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OBS-RECEIPT-001
+  NIST RMF:  AU-3
+  Federal:   EO-14110-4.3
+
+Notes: Execution receipt is created in proposal directory before adapter runs.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "0cf710c8-c531-4be2-8557-c7919d747fea",
+    "content_hash": "35ad7545a190f62fd2aca2da01649440fe3c686d3fb341765aa8cf0ddd790279",
+    "output_path": "/tmp/aictrl-bl240/proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "c0403cc2-98e8-480d-89bc-fc256740ddde",
+    "proposal_id": "0cf710c8-c531-4be2-8557-c7919d747fea",
+    "content_hash": "35ad7545a190f62fd2aca2da01649440fe3c686d3fb341765aa8cf0ddd790279",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.809394+00:00",
+    "output_path": "/tmp/aictrl-bl240/approval.json",
+    "status": "approved"
+  }
+  {
+    "success": true,
+    "adapter": "noop",
+    "action": "read",
+    "target": "/etc/hosts",
+    "executed_at": "2026-02-05T04:33:49.861021+00:00",
+    "result": {
+      "operation": "noop",
+      "message": "No-operation adapter executed successfully"
+    },
+    "proposal_id": "0cf710c8-c531-4be2-8557-c7919d747fea",
+    "approval_id": "c0403cc2-98e8-480d-89bc-fc256740ddde",
+    "content_hash": "35ad7545a190f62fd2aca2da01649440fe3c686d3fb341765aa8cf0ddd790279",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.809394+00:00",
+    "receipt_id": "b362d442-041a-41f2-82b5-a4ecc45d2405",
+    "receipt_created": true,
+    "attestation_id": "3fc2a8ad-2d61-41f7-98f2-ff7e95ee35fe",
+    "attestation_created": true,
+    "receipt_path": "/tmp/aictrl-bl240/receipt-b362d442-041a-41f2-82b5-a4ecc45d2405.json",
+    "attestation_path": "/tmp/aictrl-bl240/attestation-3fc2a8ad-2d61-41f7-98f2-ff7e95ee35fe.json"
+  }
+  /tmp/aictrl-bl240/receipt-b362d442-041a-41f2-82b5-a4ecc45d2405.json
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-241
+--------------------------------------------------------------------------------
+Title:   Exec run creates result attestation referencing receipt
+Command: bash -c rm -rf /tmp/aictrl-bl241 && mkdir -p /tmp/aictrl-bl241 && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl241/proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl241/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl241/approval.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl241/proposal.json --approval /tmp/aictrl-bl241/approval.json && cat /tmp/aictrl-bl241/attestation-*.json
+Result:  PASS
+Duration: 0.156s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OBS-ATTEST-001
+  NIST RMF:  AU-3
+  Federal:   EO-14110-4.3
+
+Notes: Result attestation references receipt_id and receipt_hash for chain integrity.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "e057b230-90da-48d5-8f54-2597f3fefe49",
+    "content_hash": "cb8bedd6040d9732db95864504ddbee0f30221a5a74ca87d7b62802e272da3b9",
+    "output_path": "/tmp/aictrl-bl241/proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "3e3c9d3a-0205-4478-8c9e-9bfd51c86c06",
+    "proposal_id": "e057b230-90da-48d5-8f54-2597f3fefe49",
+    "content_hash": "cb8bedd6040d9732db95864504ddbee0f30221a5a74ca87d7b62802e272da3b9",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.968393+00:00",
+    "output_path": "/tmp/aictrl-bl241/approval.json",
+    "status": "approved"
+  }
+  {
+    "success": true,
+    "adapter": "noop",
+    "action": "read",
+    "target": "/etc/hosts",
+    "executed_at": "2026-02-05T04:33:50.018183+00:00",
+    "result": {
+      "operation": "noop",
+      "message": "No-operation adapter executed successfully"
+    },
+    "proposal_id": "e057b230-90da-48d5-8f54-2597f3fefe49",
+    "approval_id": "3e3c9d3a-0205-4478-8c9e-9bfd51c86c06",
+    "content_hash": "cb8bedd6040d9732db95864504ddbee0f30221a5a74ca87d7b62802e272da3b9",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:49.968393+00:00",
+    "receipt_id": "7f5dbfda-9ad4-4354-a180-1cd1a23488f8",
+    "receipt_created": true,
+    "attestation_id": "bca87e4c-4885-4a32-bc3d-874a0584a49b",
+    "attestation_created": true,
+    "receipt_path": "/tmp/aictrl-bl241/receipt-7f5dbfda-9ad4-4354-a180-1cd1a23488f8.json",
+    "attestation_path": "/tmp/aictrl-bl241/attestation-bca87e4c-4885-4a32-bc3d-874a0584a49b.json"
+  }
+  {
+    "approval_id": "3e3c9d3a-0205-4478-8c9e-9bfd51c86c06",
+    "attestation_hash": "ba78f84bb1403c3b9d1bb54b00013ce4c600497c75b22f3d96de2ae5032109d9",
+    "attestation_hash_algorithm": "sha256",
+    "attestation_id": "bca87e4c-4885-4a32-bc3d-874a0584a49b",
+    "attestation_version": "1.0",
+    "completed_at": "2026-02-05T04:33:50.018197+00:00",
+    "created_at": "2026-02-05T04:33:50.018197+00:00",
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-242
+--------------------------------------------------------------------------------
+Title:   Observability write failure does not block execution
+Command: bash -c rm -rf /tmp/aictrl-bl242 && mkdir -p /tmp/aictrl-bl242 && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl242/proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl242/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl242/approval.json 2>/dev/null && chmod 555 /tmp/aictrl-bl242 && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl242/proposal.json --approval /tmp/aictrl-bl242/approval.json; RC=$?; chmod 755 /tmp/aictrl-bl242; exit $RC
+Result:  PASS
+Duration: 0.182s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OBS-FAILSAFE-001
+  NIST RMF:  SI-17
+  Federal:   EO-14110-4.3
+
+Notes: Execution succeeds even when observability artifacts cannot be written. Warnings surfaced in result.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "6e2a20c2-e00d-4279-b12e-67f5642b59cd",
+    "content_hash": "b506fba3cf8080e05788189630954d312ca27ccbe50cf94e22f52a6354680573",
+    "output_path": "/tmp/aictrl-bl242/proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "824d2363-0719-4845-b7f6-f57f41026fb5",
+    "proposal_id": "6e2a20c2-e00d-4279-b12e-67f5642b59cd",
+    "content_hash": "b506fba3cf8080e05788189630954d312ca27ccbe50cf94e22f52a6354680573",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:50.131672+00:00",
+    "output_path": "/tmp/aictrl-bl242/approval.json",
+    "status": "approved"
+  }
+  {
+    "success": true,
+    "adapter": "noop",
+    "action": "read",
+    "target": "/etc/hosts",
+    "executed_at": "2026-02-05T04:33:50.197071+00:00",
+    "result": {
+      "operation": "noop",
+      "message": "No-operation adapter executed successfully"
+    },
+    "proposal_id": "6e2a20c2-e00d-4279-b12e-67f5642b59cd",
+    "approval_id": "824d2363-0719-4845-b7f6-f57f41026fb5",
+    "content_hash": "b506fba3cf8080e05788189630954d312ca27ccbe50cf94e22f52a6354680573",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:50.131672+00:00",
+    "receipt_id": "33c8a1df-0cc8-4a3b-8d72-34adaac996d1",
+    "receipt_created": false,
+    "attestation_id": "f64b4cd7-bd5f-4036-816d-9ddb699a44b1",
+    "attestation_created": false,
+    "observability_warnings": [
+      {
+        "source": "observability",
+        "message": "Execution receipt could not be created: [Errno 13] Permission denied: '/tmp/aictrl-bl242/receipt-33c8a1df-0cc8-4a3b-8d72-34adaac996d1.json'",
+        "artifact": "receipt"
+      },
+      {
+        "source": "observability",
+        "message": "Result attestation could not be created: [Errno 13] Permission denied: '/tmp/aictrl-bl242/attestation-f64b4cd7-bd5f-4036-816d-9ddb699a44b1.json'",
+        "artifact": "attestation"
+      }
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-243
+--------------------------------------------------------------------------------
+Title:   Receipt artifact content is ASCII-only
+Command: bash -c rm -rf /tmp/aictrl-bl243 && mkdir -p /tmp/aictrl-bl243 && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl243/proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl243/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl243/approval.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl243/proposal.json --approval /tmp/aictrl-bl243/approval.json 2>/dev/null && cat /tmp/aictrl-bl243/receipt-*.json
+Result:  PASS
+Duration: 0.165s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OBS-ASCII-001
+  NIST RMF:  AU-3
+  Federal:   EO-14110-4.1
+
+Notes: Receipt artifact is ASCII-only for audit compliance.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "ef76df83-6301-47fd-b8e9-e8de439b8805",
+    "content_hash": "ee21a9bcfe2f54cca9aef28c317909cfef6d68bc787de27c75e5d48c1eaaf523",
+    "output_path": "/tmp/aictrl-bl243/proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "3d37c3e2-6547-4618-a4ed-72be38d9bfc8",
+    "proposal_id": "ef76df83-6301-47fd-b8e9-e8de439b8805",
+    "content_hash": "ee21a9bcfe2f54cca9aef28c317909cfef6d68bc787de27c75e5d48c1eaaf523",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:50.309378+00:00",
+    "output_path": "/tmp/aictrl-bl243/approval.json",
+    "status": "approved"
+  }
+  {
+    "success": true,
+    "adapter": "noop",
+    "action": "read",
+    "target": "/etc/hosts",
+    "executed_at": "2026-02-05T04:33:50.365399+00:00",
+    "result": {
+      "operation": "noop",
+      "message": "No-operation adapter executed successfully"
+    },
+    "proposal_id": "ef76df83-6301-47fd-b8e9-e8de439b8805",
+    "approval_id": "3d37c3e2-6547-4618-a4ed-72be38d9bfc8",
+    "content_hash": "ee21a9bcfe2f54cca9aef28c317909cfef6d68bc787de27c75e5d48c1eaaf523",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:50.309378+00:00",
+    "receipt_id": "a1e47fa2-3d6a-4f62-82c2-466e294e2cb9",
+    "receipt_created": true,
+    "attestation_id": "f8e54322-1ea3-4c1a-84d7-97a2c42194ae",
+    "attestation_created": true,
+    "receipt_path": "/tmp/aictrl-bl243/receipt-a1e47fa2-3d6a-4f62-82c2-466e294e2cb9.json",
+    "attestation_path": "/tmp/aictrl-bl243/attestation-f8e54322-1ea3-4c1a-84d7-97a2c42194ae.json"
+  }
+  {
+    "approval_id": "3d37c3e2-6547-4618-a4ed-72be38d9bfc8",
+    "content_hash": "ee21a9bcfe2f54cca9aef28c317909cfef6d68bc787de27c75e5d48c1eaaf523",
+    "content_hash_algorithm": "sha256",
+    "created_at": "2026-02-05T04:33:50.365152+00:00",
+    "executed_by": "filterprooftravis",
+    "execution_context": {
+      "aictrl_phase": 12,
+  ... (truncated)
+
+stderr:
+  (empty)
+
+--------------------------------------------------------------------------------
+Test ID: BL-244
+--------------------------------------------------------------------------------
+Title:   Attestation includes result_hash for tamper detection
+Command: bash -c rm -rf /tmp/aictrl-bl244 && mkdir -p /tmp/aictrl-bl244 && /usr/bin/python3 -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl244/proposal.json 2>/dev/null && /usr/bin/python3 -m aictrl exec approve --proposal /tmp/aictrl-bl244/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl244/approval.json 2>/dev/null && /usr/bin/python3 -m aictrl exec run --proposal /tmp/aictrl-bl244/proposal.json --approval /tmp/aictrl-bl244/approval.json 2>/dev/null && cat /tmp/aictrl-bl244/attestation-*.json
+Result:  PASS
+Duration: 0.159s
+Exit Code: 0
+
+Spec Mapping:
+  Internal:  OBS-RESULT-HASH-001
+  NIST RMF:  AU-10
+  Federal:   EO-14110-4.3
+
+Notes: Attestation includes result_hash enabling tamper detection of execution results.
+
+stdout:
+  {
+    "success": true,
+    "proposal_id": "69f334f0-1f05-4a6e-8347-e95dd63243ea",
+    "content_hash": "aa3c040acff81207c2068b9d009c342a67ce5bfd9bebe825da5b16229fd9373b",
+    "output_path": "/tmp/aictrl-bl244/proposal.json",
+    "status": "proposed",
+    "dangerous_requested": false,
+    "adapter": "noop",
+    "action": "read"
+  }
+  {
+    "success": true,
+    "approval_id": "06a17042-6666-4992-ace8-404e97f8cfbd",
+    "proposal_id": "69f334f0-1f05-4a6e-8347-e95dd63243ea",
+    "content_hash": "aa3c040acff81207c2068b9d009c342a67ce5bfd9bebe825da5b16229fd9373b",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:50.473313+00:00",
+    "output_path": "/tmp/aictrl-bl244/approval.json",
+    "status": "approved"
+  }
+  {
+    "success": true,
+    "adapter": "noop",
+    "action": "read",
+    "target": "/etc/hosts",
+    "executed_at": "2026-02-05T04:33:50.524302+00:00",
+    "result": {
+      "operation": "noop",
+      "message": "No-operation adapter executed successfully"
+    },
+    "proposal_id": "69f334f0-1f05-4a6e-8347-e95dd63243ea",
+    "approval_id": "06a17042-6666-4992-ace8-404e97f8cfbd",
+    "content_hash": "aa3c040acff81207c2068b9d009c342a67ce5bfd9bebe825da5b16229fd9373b",
+    "approved_by": "baseline-test",
+    "approved_at": "2026-02-05T04:33:50.473313+00:00",
+    "receipt_id": "5714ccef-e42c-47ca-b9ca-37550fb37ed9",
+    "receipt_created": true,
+    "attestation_id": "c74777e7-ee1c-4761-9416-1434fd6720b9",
+    "attestation_created": true,
+    "receipt_path": "/tmp/aictrl-bl244/receipt-5714ccef-e42c-47ca-b9ca-37550fb37ed9.json",
+    "attestation_path": "/tmp/aictrl-bl244/attestation-c74777e7-ee1c-4761-9416-1434fd6720b9.json"
+  }
+  {
+    "approval_id": "06a17042-6666-4992-ace8-404e97f8cfbd",
+    "attestation_hash": "d9df339528a6088c3f34e8a4b0639cb5568b6ec2e67313a71d06a50de2268168",
+    "attestation_hash_algorithm": "sha256",
+    "attestation_id": "c74777e7-ee1c-4761-9416-1434fd6720b9",
+    "attestation_version": "1.0",
+    "completed_at": "2026-02-05T04:33:50.524316+00:00",
+    "created_at": "2026-02-05T04:33:50.524316+00:00",
+  ... (truncated)
+
+stderr:
+  (empty)
+
+================================================================================
+Milestone: Demo-ready (evidence-complete). Not feature-complete.
+See docs/milestones/DEMO_READY.md for milestone definition.
+================================================================================
+End of Report
+================================================================================
