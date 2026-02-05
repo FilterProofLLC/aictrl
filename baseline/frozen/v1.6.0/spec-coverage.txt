@@ -1,0 +1,97 @@
+================================================================================
+AICtrl Baseline Spec Coverage Index
+================================================================================
+
+Generated: 2026-02-05T04:33:50Z
+Baseline Version: 1.5
+
+--------------------------------------------------------------------------------
+NIST AI RMF Control Coverage
+--------------------------------------------------------------------------------
+
+Control ID      Test IDs                                 Status    
+-----------------------------------------------------------------
+AC-3            BL-010, BL-011, BL-012                   FULL      
+AC-3(7)         BL-020, BL-042                           FULL      
+AC-6            BL-013, BL-014                           FULL      
+AC-6(9)         BL-030, BL-032                           FULL      
+AU-3            BL-090, BL-091, BL-100, BL-240, BL-...   FULL      
+AU-8            BL-101                                   PARTIAL   
+CA-7            BL-050, BL-061                           FULL      
+CA-8            BL-031                                   PARTIAL   
+CM-7            BL-080, BL-081                           FULL      
+GV.PO-1         BL-004, BL-021                           FULL      
+ID.AM-2         BL-001, BL-002, BL-003                   FULL      
+SC-5            BL-110                                   PARTIAL   
+SC-7            BL-040, BL-041, BL-236                   FULL      
+SI-10           BL-070, BL-071                           FULL      
+SI-17           BL-060, BL-242                           FULL      
+
+Coverage Summary: FULL=12, PARTIAL=3, NONE=0
+
+--------------------------------------------------------------------------------
+Internal Invariant Coverage
+--------------------------------------------------------------------------------
+
+ATTEST-CLI-HELP-001: BL-210
+ATTEST-CLI-HELP-002: BL-211
+ATTEST-DANGEROUS-GATE-001: BL-214
+ATTEST-VERIFY-SAFE-001: BL-212
+ATTEST-VERIFY-SAFE-002: BL-213
+AUTHZ-ENFORCEMENT-001: BL-020
+AUTHZ-POLICY-001: BL-021
+BOOT-MEASURE-DEFAULT-001: BL-201
+BOOT-MEASURE-MOCK-001: BL-200
+BOOT-VERIFY-POLICY-001: BL-202
+CLI-SURFACE-001: BL-001
+CLI-SURFACE-002: BL-002
+CLI-SURFACE-003: BL-003
+CLI-SURFACE-004: BL-004
+CLI-VALIDATION-001: BL-070
+CLI-VALIDATION-002: BL-071
+CRYPTO-ERROR-001: BL-123
+CRYPTO-KEYGEN-001: BL-121
+CRYPTO-KEYGEN-GATE-001: BL-120
+CRYPTO-SIGN-VERIFY-001: BL-122
+EXEC-APPROVE-001: BL-230
+EXEC-APPROVE-BINDING-001: BL-237
+EXEC-APPROVE-TAMPER-001: BL-231
+EXEC-BOUNDARY-001: BL-040
+EXEC-DANGEROUS-GATE-001: BL-221
+EXEC-INSPECT-001: BL-031
+EXEC-PROPOSE-001: BL-220
+EXEC-READY-001: BL-050
+EXEC-REVIEW-001: BL-223
+EXEC-RUN-ADAPTER-DENY-001: BL-236
+EXEC-RUN-DANGEROUS-GATE-001: BL-234
+EXEC-RUN-HASH-MISMATCH-001: BL-233
+EXEC-RUN-NO-APPROVAL-001: BL-232
+EXEC-RUN-SUCCESS-001: BL-235
+EXEC-TAMPER-DETECT-001: BL-222
+INV-004: BL-013, BL-014, BL-030, BL-032, BL-041
+INV-005: BL-011, BL-042
+INV-008: BL-100
+INV-011: BL-101
+INV-016: BL-010, BL-060, BL-061
+INV-019: BL-080, BL-081
+OBS-ASCII-001: BL-243
+OBS-ATTEST-001: BL-241
+OBS-FAILSAFE-001: BL-242
+OBS-RECEIPT-001: BL-240
+OBS-RESULT-HASH-001: BL-244
+OUTPUT-ASCII-001: BL-090, BL-091
+POLICY-DETERMINISM-001: BL-110
+POLICY-SANDBOX-001: BL-012
+
+--------------------------------------------------------------------------------
+Federal Policy Coverage
+--------------------------------------------------------------------------------
+
+EO-14110-4.1: BL-001, BL-002, BL-003, BL-070, BL-071, BL-090, BL-091, BL-243
+EO-14110-4.2: BL-004, BL-012, BL-020, BL-021, BL-110, BL-120, BL-121, BL-122, BL-123, BL-200, BL-201, BL-202, BL-210, BL-211, BL-212, BL-213, BL-214, BL-220, BL-221, BL-222, BL-223, BL-230, BL-231, BL-232, BL-233, BL-234, BL-235, BL-236, BL-237
+EO-14110-4.3: BL-031, BL-050, BL-060, BL-061, BL-100, BL-101, BL-240, BL-241, BL-242, BL-244
+EO-14110-4.5: BL-010, BL-011, BL-013, BL-014, BL-030, BL-032, BL-040, BL-041, BL-042, BL-080, BL-081
+
+================================================================================
+End of Coverage Index
+================================================================================

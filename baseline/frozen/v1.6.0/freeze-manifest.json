@@ -1,0 +1,39 @@
+{
+  "freeze_version": "1.0",
+  "tag": "v1.6.0",
+  "commit_sha": "49d8e14f42cf7f13f7a66b660c1c64fa26b70d4b",
+  "frozen_at": "2026-02-05T04:33:45Z",
+  "frozen_by": "baseline/run_baseline.py",
+  "command": "python3 baseline/run_baseline.py --emit-json --emit-coverage --emit-digest --emit-coverage-json",
+  "baseline_summary": {
+    "total_tests": 58,
+    "passed": 57,
+    "expected_failures": 1,
+    "unexpected_failures": 0,
+    "expected_fail_ids": ["BL-080"],
+    "result": "PASS"
+  },
+  "artifacts": {
+    "baseline-report.txt": {
+      "description": "ASCII baseline test report",
+      "sha256": "bce460998dca7f5230069fb85400d0e1a38d6ba4253eeb315cebc5beb72b4023"
+    },
+    "baseline-attestation.json": {
+      "description": "JSON baseline attestation",
+      "sha256": "823db9afc0b46b44c5dd5fd8514d3db2b87160ad09d57bfa28f183c6cae57fda"
+    },
+    "spec-coverage.txt": {
+      "description": "Spec coverage index (ASCII)",
+      "sha256": "4c7ecf25764cf0802b84a016ed01eca1014d9a8990d5671cc6128e3cd61ed21b"
+    },
+    "spec-coverage.json": {
+      "description": "Spec coverage index (JSON)",
+      "sha256": "25aab99a3191eeffaa200331bba73fa08a103226827ee61a3b4792d62b3d4271"
+    },
+    "baseline-digest.txt": {
+      "description": "Cryptographic digest of baseline artifacts",
+      "sha256": "2758191df540b140bbbe310b366f7f01e267b2f37e1a6b2dffb501b3aefac9ee"
+    }
+  },
+  "reproduce": "git checkout v1.6.0 && python3 baseline/run_baseline.py --emit-json --emit-coverage --emit-digest --emit-coverage-json"
+}
