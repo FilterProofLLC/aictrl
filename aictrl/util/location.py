@@ -30,6 +30,18 @@ ENFORCE_LOCATION_VAR = "AICTRL_ENFORCE_LOCATION"
 LOCATION_NON_CANONICAL = "AICTRL-7001"
 LOCATION_SUBMODULE_DETECTED = "AICTRL-7002"
 LOCATION_REMOTE_MISMATCH = "AICTRL-7003"
+LOCATION_DETACHED_HEAD = "AICTRL-7004"
+LOCATION_SYMLINK_DETECTED = "AICTRL-7005"
+
+# Canonical remote URL patterns (FilterProofLLC/aictrl)
+CANONICAL_REMOTE_PATTERNS = (
+    "https://github.com/FilterProofLLC/aictrl",
+    "https://github.com/FilterProofLLC/aictrl.git",
+    "git@github.com:FilterProofLLC/aictrl",
+    "git@github.com:FilterProofLLC/aictrl.git",
+    "ssh://git@github.com/FilterProofLLC/aictrl",
+    "ssh://git@github.com/FilterProofLLC/aictrl.git",
+)
 
 
 def is_enforcement_enabled() -> bool:
@@ -119,6 +131,129 @@ def _get_parent_repo(git_root: str) -> Optional[str]:
     return None
 
 
+def _get_origin_remote_url() -> Optional[str]:
+    """Get the URL of the 'origin' remote.
+
+    Returns:
+        The origin remote URL, or None if not available.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "remote", "get-url", "origin"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if proc.returncode == 0:
+            return proc.stdout.strip()
+    except Exception:
+        pass
+    return None
+
+
+def _normalize_remote_url(url: str) -> str:
+    """Normalize a git remote URL for comparison.
+
+    Extracts the owner/repo part from various GitHub URL formats and
+    returns it in a canonical form for comparison.
+
+    Handles:
+    - https://github.com/owner/repo.git
+    - git@github.com:owner/repo.git
+    - ssh://git@github.com/owner/repo.git
+
+    Args:
+        url: The remote URL to normalize.
+
+    Returns:
+        Normalized string in form "github.com/owner/repo" (lowercase).
+    """
+    if not url:
+        return ""
+    normalized = url.strip().lower()
+    # Remove trailing .git
+    if normalized.endswith(".git"):
+        normalized = normalized[:-4]
+
+    # Extract owner/repo from different formats
+    # HTTPS: https://github.com/owner/repo
+    if normalized.startswith("https://github.com/"):
+        path = normalized[len("https://github.com/"):]
+        return "github.com/" + path
+
+    # SSH with protocol: ssh://git@github.com/owner/repo
+    if normalized.startswith("ssh://git@github.com/"):
+        path = normalized[len("ssh://git@github.com/"):]
+        return "github.com/" + path
+
+    # SSH shorthand: git@github.com:owner/repo
+    if normalized.startswith("git@github.com:"):
+        path = normalized[len("git@github.com:"):]
+        return "github.com/" + path
+
+    # Fallback: return as-is
+    return normalized
+
+
+def _is_canonical_remote(url: Optional[str]) -> bool:
+    """Check if a remote URL matches the canonical FilterProofLLC/aictrl repo.
+
+    Args:
+        url: The remote URL to check.
+
+    Returns:
+        True if the URL matches canonical patterns, False otherwise.
+        Returns True if URL is None (unknown = no denial, only warn).
+    """
+    if url is None:
+        # Unknown remote = cannot prove mismatch, so no denial
+        return True
+    normalized = _normalize_remote_url(url)
+    canonical_normalized = _normalize_remote_url("https://github.com/FilterProofLLC/aictrl")
+    return normalized == canonical_normalized
+
+
+def _is_detached_head() -> Optional[bool]:
+    """Check if HEAD is in detached state.
+
+    Returns:
+        True if detached, False if attached, None if detection failed.
+    """
+    try:
+        proc = subprocess.run(
+            ["git", "symbolic-ref", "-q", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        # Non-zero exit = detached HEAD
+        return proc.returncode != 0
+    except Exception:
+        return None
+
+
+def _is_symlinked_path(path: str) -> bool:
+    """Check if a path involves symlink traversal.
+
+    Compares the given path against its realpath to detect symlinks.
+
+    Args:
+        path: The path to check.
+
+    Returns:
+        True if the path differs from its realpath (symlink detected).
+    """
+    if not path:
+        return False
+    try:
+        real = os.path.realpath(path)
+        # Also resolve the input path but don't follow symlinks for the last component
+        # to detect if the input itself is a symlink
+        return os.path.abspath(path) != real
+    except Exception:
+        return False
+
+
 def detect_location_context() -> dict[str, Any]:
     """Detect location context for observability and enforcement.
 
@@ -132,6 +267,10 @@ def detect_location_context() -> dict[str, Any]:
         - is_canonical: Whether running from canonical location
         - is_submodule: Whether running inside a git submodule
         - parent_repo: Parent repository path (if submodule)
+        - origin_remote: Origin remote URL (or None if unavailable)
+        - is_canonical_remote: Whether origin matches canonical repo
+        - is_detached_head: Whether HEAD is detached (or None if unknown)
+        - is_symlinked: Whether path involves symlink traversal
         - detection_error: Error string if detection failed, else None
     """
     result = {
@@ -140,6 +279,10 @@ def detect_location_context() -> dict[str, Any]:
         "is_canonical": False,
         "is_submodule": False,
         "parent_repo": None,
+        "origin_remote": None,
+        "is_canonical_remote": True,  # Default True = unknown means no denial
+        "is_detached_head": None,
+        "is_symlinked": False,
         "detection_error": None,
     }
 
@@ -157,6 +300,21 @@ def detect_location_context() -> dict[str, Any]:
             result["is_submodule"] = _is_submodule(git_root)
             if result["is_submodule"]:
                 result["parent_repo"] = _get_parent_repo(git_root)
+
+        # Check origin remote (Phase 15.2)
+        origin_url = _get_origin_remote_url()
+        result["origin_remote"] = origin_url
+        if origin_url is not None:
+            result["is_canonical_remote"] = _is_canonical_remote(origin_url)
+        # If origin_url is None, is_canonical_remote stays True (unknown = no denial)
+
+        # Check for detached HEAD (Phase 15.2)
+        result["is_detached_head"] = _is_detached_head()
+
+        # Check for symlinked path (Phase 15.2)
+        # Compare cwd against its realpath
+        cwd = os.getcwd()
+        result["is_symlinked"] = _is_symlinked_path(cwd)
 
     except Exception as e:
         result["detection_error"] = str(e)
@@ -215,9 +373,40 @@ def evaluate_location_policy() -> dict[str, Any]:
             "code": LOCATION_SUBMODULE_DETECTED,
         })
 
+    # Phase 15.2: Remote mismatch warning
+    if not context.get("is_canonical_remote") and context.get("origin_remote"):
+        warnings.append({
+            "source": "observability",
+            "message": (
+                "Origin remote mismatch: "
+                + str(context.get("origin_remote", "unknown"))
+                + " (expected: FilterProofLLC/aictrl)"
+            ),
+            "artifact": "location",
+            "code": LOCATION_REMOTE_MISMATCH,
+        })
+
+    # Phase 15.2: Detached HEAD warning
+    if context.get("is_detached_head") is True:
+        warnings.append({
+            "source": "observability",
+            "message": "Detached HEAD state detected",
+            "artifact": "location",
+            "code": LOCATION_DETACHED_HEAD,
+        })
+
+    # Phase 15.2: Symlinked path warning
+    if context.get("is_symlinked"):
+        warnings.append({
+            "source": "observability",
+            "message": "Symlinked working path detected",
+            "artifact": "location",
+            "code": LOCATION_SYMLINK_DETECTED,
+        })
+
     # Enforcement logic (only when flag ON and not CI)
     if enforce and not ci_exempt:
-        # Check for submodule first (more specific)
+        # Check for submodule first (most specific)
         if context.get("is_submodule"):
             parent = context.get("parent_repo", "unknown")
             denial = {
@@ -230,7 +419,17 @@ def evaluate_location_policy() -> dict[str, Any]:
                 "parent_repo": parent,
                 "actual_path": context.get("actual_path"),
             }
-        # Then check for non-canonical path
+        # Phase 15.2: Remote mismatch (only if we have a remote and it mismatches)
+        elif not context.get("is_canonical_remote") and context.get("origin_remote"):
+            denial = {
+                "code": LOCATION_REMOTE_MISMATCH,
+                "message": "Origin remote does not match canonical repository",
+                "hint": (
+                    "Expected origin: https://github.com/FilterProofLLC/aictrl"
+                ),
+                "actual_remote": context.get("origin_remote"),
+            }
+        # Non-canonical path
         elif not context.get("is_canonical") and not context.get("detection_error"):
             denial = {
                 "code": LOCATION_NON_CANONICAL,
@@ -241,6 +440,23 @@ def evaluate_location_policy() -> dict[str, Any]:
                 ),
                 "actual_path": context.get("actual_path"),
                 "expected_path": context.get("canonical_path"),
+            }
+        # Phase 15.2: Detached HEAD
+        elif context.get("is_detached_head") is True:
+            denial = {
+                "code": LOCATION_DETACHED_HEAD,
+                "message": "Detached HEAD state detected",
+                "hint": "Checkout a branch before running aictrl commands",
+            }
+        # Phase 15.2: Symlinked path
+        elif context.get("is_symlinked"):
+            denial = {
+                "code": LOCATION_SYMLINK_DETECTED,
+                "message": "Symlinked working path detected",
+                "hint": (
+                    "Run from the actual path, not via symlink: "
+                    + str(context.get("actual_path", "unknown"))
+                ),
             }
 
     return {
