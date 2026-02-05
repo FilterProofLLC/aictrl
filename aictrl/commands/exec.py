@@ -3,6 +3,7 @@
 Phase 8-11: Inspection only.
 Phase 12 Part 1: Proposal and Review (no execution).
 Phase 12 Part 2: Approval and Controlled Execution.
+Phase 14: Post-execution observability (best-effort, non-blocking).
 
 CRITICAL SAFETY INVARIANTS:
 - No execution without prior approval artifact
@@ -14,10 +15,20 @@ CRITICAL SAFETY INVARIANTS:
 - No shell execution unless adapter explicitly allows
 - No writes outside explicit targets
 - All failures return deterministic exit codes (2 for policy denial)
+
+OBSERVABILITY INVARIANTS (Phase 14):
+- Observability failures NEVER block execution
+- Observability failures NEVER change exit codes
+- Hashes provide tamper DETECTION, not PREVENTION
+- No enforcement, no policy evaluation, no approval expiration
+- No replay prevention, no identity verification, no context binding
 """
 
 import hashlib
 import json
+import os
+import socket
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -1037,6 +1048,213 @@ def _execute_adapter(
     }
 
 
+# ============================================================================
+# Phase 14: Post-Execution Observability (best-effort, non-blocking)
+#
+# These functions create observability artifacts (Execution Receipt and
+# Result Attestation) as defined in Phase 14 Part 1 design document.
+#
+# CRITICAL: These functions are OBSERVABILITY ONLY.
+# - They NEVER block execution.
+# - They NEVER change exit codes.
+# - They NEVER enforce policy.
+# - Hashes provide tamper DETECTION, not PREVENTION.
+# - All enforcement belongs to Phase 15 or later.
+# ============================================================================
+
+
+def _build_execution_context() -> dict[str, Any]:
+    """Build execution context snapshot for observability.
+
+    SECURITY: Values of environment variables are NEVER captured.
+    Only variable names are recorded. This prevents accidental capture
+    of secrets, tokens, or credentials in observability artifacts.
+
+    This function provides DETECTION, not PREVENTION.
+    Context is recorded but not verified or enforced.
+
+    Returns:
+        Dictionary with environmental context fields.
+    """
+    from .. import __version__
+    from ..phases import get_current_phase
+
+    context = {
+        "hostname": "unknown",
+        "username": os.environ.get("USER", os.environ.get("LOGNAME", "unknown")),
+        "working_directory": "unknown",
+        "aictrl_version": __version__,
+        "aictrl_phase": get_current_phase(),
+        "timestamp_utc": generate_timestamp(),
+        "environment_variables": sorted(os.environ.keys()),
+    }
+
+    try:
+        context["hostname"] = socket.gethostname()
+    except Exception:
+        pass
+
+    try:
+        context["working_directory"] = os.getcwd()
+    except Exception:
+        pass
+
+    context["process_id"] = os.getpid()
+
+    try:
+        with open("/proc/sys/kernel/random/boot_id", "r") as f:
+            context["boot_id"] = f.read().strip()
+    except Exception:
+        context["boot_id"] = None
+
+    return context
+
+
+def _create_execution_receipt(
+    proposal_id: str,
+    approval_id: str,
+    content_hash: str,
+    artifacts_dir: Path,
+) -> tuple[Optional[dict], list[dict]]:
+    """Create Execution Receipt BEFORE adapter execution.
+
+    This is OBSERVABILITY ONLY. Receipt creation failure does NOT block
+    execution. Warnings are surfaced in the execution result.
+
+    Hashes provide tamper DETECTION, not PREVENTION.
+    Receipt records intent; it does not enforce policy.
+
+    Args:
+        proposal_id: ID of the proposal being executed.
+        approval_id: ID of the approval authorizing execution.
+        content_hash: Hash of proposal content at execution time.
+        artifacts_dir: Directory to write receipt artifact.
+
+    Returns:
+        Tuple of (receipt_dict_or_None, warnings_list).
+    """
+    warnings = []
+    receipt_id = str(uuid.uuid4())
+    created_at = generate_timestamp()
+
+    # Build receipt content (without receipt_hash - hash computed over this)
+    receipt_content = {
+        "approval_id": approval_id,
+        "content_hash": content_hash,
+        "content_hash_algorithm": "sha256",
+        "created_at": created_at,
+        "executed_by": os.environ.get(
+            "USER", os.environ.get("LOGNAME", "unknown")
+        ),
+        "execution_context": _build_execution_context(),
+        "proposal_id": proposal_id,
+        "receipt_id": receipt_id,
+        "receipt_version": "1.0",
+    }
+
+    receipt_hash = compute_content_hash(receipt_content)
+
+    receipt = dict(receipt_content)
+    receipt["receipt_hash"] = receipt_hash
+    receipt["receipt_hash_algorithm"] = "sha256"
+
+    receipt_path = artifacts_dir / f"receipt-{receipt_id}.json"
+    try:
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        with open(receipt_path, "w") as f:
+            json.dump(receipt, f, indent=2, sort_keys=True)
+    except Exception as e:
+        warnings.append({
+            "source": "observability",
+            "message": f"Execution receipt could not be created: {e}",
+            "artifact": "receipt",
+        })
+        return receipt, warnings
+
+    receipt["_output_path"] = str(receipt_path)
+    return receipt, warnings
+
+
+def _create_result_attestation(
+    receipt: Optional[dict],
+    proposal_id: str,
+    approval_id: str,
+    exec_result: dict,
+    started_at: float,
+    artifacts_dir: Path,
+) -> tuple[Optional[dict], list[dict]]:
+    """Create Result Attestation AFTER adapter execution completes.
+
+    This is OBSERVABILITY ONLY. Attestation creation failure does NOT
+    block execution. Warnings are surfaced in the execution result.
+
+    Hashes provide tamper DETECTION, not PREVENTION.
+    Attestation records outcome; it does not enforce policy.
+
+    Args:
+        receipt: Receipt dict (may be None if receipt creation failed).
+        proposal_id: ID of the proposal that was executed.
+        approval_id: ID of the approval that authorized execution.
+        exec_result: Result dictionary from adapter execution.
+        started_at: Monotonic time when execution started.
+        artifacts_dir: Directory to write attestation artifact.
+
+    Returns:
+        Tuple of (attestation_dict_or_None, warnings_list).
+    """
+    warnings = []
+    attestation_id = str(uuid.uuid4())
+    completed_at = generate_timestamp()
+    duration_ms = int((time.monotonic() - started_at) * 1000)
+
+    result_json = canonicalize_json(exec_result)
+    result_hash = hashlib.sha256(result_json.encode("utf-8")).hexdigest()
+    result_summary = result_json[:256]
+
+    # Build attestation content (without attestation_hash)
+    attestation_content = {
+        "approval_id": approval_id,
+        "attestation_id": attestation_id,
+        "attestation_version": "1.0",
+        "completed_at": completed_at,
+        "created_at": completed_at,
+        "duration_ms": duration_ms,
+        "exit_code": exec_result.get(
+            "exit_code", 0 if exec_result.get("success") else 1
+        ),
+        "proposal_id": proposal_id,
+        "receipt_hash": receipt.get("receipt_hash") if receipt else None,
+        "receipt_id": receipt.get("receipt_id") if receipt else None,
+        "result_hash": result_hash,
+        "result_hash_algorithm": "sha256",
+        "result_summary": result_summary,
+        "success": exec_result.get("success", False),
+        "warnings": [],
+    }
+
+    attestation_hash = compute_content_hash(attestation_content)
+
+    attestation = dict(attestation_content)
+    attestation["attestation_hash"] = attestation_hash
+    attestation["attestation_hash_algorithm"] = "sha256"
+
+    attestation_path = artifacts_dir / f"attestation-{attestation_id}.json"
+    try:
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        with open(attestation_path, "w") as f:
+            json.dump(attestation, f, indent=2, sort_keys=True)
+    except Exception as e:
+        warnings.append({
+            "source": "observability",
+            "message": f"Result attestation could not be created: {e}",
+            "artifact": "attestation",
+        })
+        return attestation, warnings
+
+    attestation["_output_path"] = str(attestation_path)
+    return attestation, warnings
+
+
 def run_proposal(
     proposal_path: str,
     approval_path: str,
@@ -1148,6 +1366,25 @@ def run_proposal(
                 "exit_code": 2,
             }
 
+    # ----------------------------------------------------------------
+    # Phase 14: Observability - create receipt BEFORE execution
+    # This is best-effort. Failure does NOT block execution.
+    # ----------------------------------------------------------------
+    approval_id = approval.get("approval_id")
+    artifacts_dir = Path(proposal_path).parent
+    observability_warnings = []
+
+    receipt, receipt_warnings = _create_execution_receipt(
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        content_hash=content_hash,
+        artifacts_dir=artifacts_dir,
+    )
+    observability_warnings.extend(receipt_warnings)
+
+    # Record monotonic start time for duration measurement
+    exec_start = time.monotonic()
+
     # STEP 7: Execute the adapter (ONLY place execution happens)
     exec_result = _execute_adapter(
         adapter=adapter,
@@ -1157,11 +1394,45 @@ def run_proposal(
         dangerous=dangerous,
     )
 
+    # ----------------------------------------------------------------
+    # Phase 14: Observability - create attestation AFTER execution
+    # This is best-effort. Failure does NOT block execution.
+    # ----------------------------------------------------------------
+    attestation, attest_warnings = _create_result_attestation(
+        receipt=receipt,
+        proposal_id=proposal_id,
+        approval_id=approval_id,
+        exec_result=exec_result,
+        started_at=exec_start,
+        artifacts_dir=artifacts_dir,
+    )
+    observability_warnings.extend(attest_warnings)
+
     # Enrich result with execution context
     exec_result["proposal_id"] = proposal_id
-    exec_result["approval_id"] = approval.get("approval_id")
+    exec_result["approval_id"] = approval_id
     exec_result["content_hash"] = content_hash
     exec_result["approved_by"] = approval.get("approved_by")
     exec_result["approved_at"] = approval.get("approved_at")
+
+    # Add observability metadata (never changes exit code or success)
+    exec_result["receipt_id"] = receipt.get("receipt_id") if receipt else None
+    exec_result["receipt_created"] = (
+        "_output_path" in receipt if receipt else False
+    )
+    exec_result["attestation_id"] = (
+        attestation.get("attestation_id") if attestation else None
+    )
+    exec_result["attestation_created"] = (
+        "_output_path" in attestation if attestation else False
+    )
+
+    if receipt and "_output_path" in receipt:
+        exec_result["receipt_path"] = receipt["_output_path"]
+    if attestation and "_output_path" in attestation:
+        exec_result["attestation_path"] = attestation["_output_path"]
+
+    if observability_warnings:
+        exec_result["observability_warnings"] = observability_warnings
 
     return exec_result
