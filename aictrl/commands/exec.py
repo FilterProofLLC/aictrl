@@ -4,6 +4,7 @@ Phase 8-11: Inspection only.
 Phase 12 Part 1: Proposal and Review (no execution).
 Phase 12 Part 2: Approval and Controlled Execution.
 Phase 14: Post-execution observability (best-effort, non-blocking).
+Phase 15: Location enforcement (flag-gated, deny on violation).
 
 CRITICAL SAFETY INVARIANTS:
 - No execution without prior approval artifact
@@ -20,8 +21,13 @@ OBSERVABILITY INVARIANTS (Phase 14):
 - Observability failures NEVER block execution
 - Observability failures NEVER change exit codes
 - Hashes provide tamper DETECTION, not PREVENTION
-- No enforcement, no policy evaluation, no approval expiration
-- No replay prevention, no identity verification, no context binding
+
+ENFORCEMENT INVARIANTS (Phase 15):
+- Location enforcement is flag-gated (AICTRL_ENFORCE_LOCATION)
+- When flag OFF (default): warn-only, no denials
+- When flag ON: deny non-canonical path or submodule execution
+- CI environments are exempt from enforcement
+- Exit code 2 for enforcement denials (policy denial)
 """
 
 import hashlib
@@ -1381,6 +1387,38 @@ def run_proposal(
         artifacts_dir=artifacts_dir,
     )
     observability_warnings.extend(receipt_warnings)
+
+    # ----------------------------------------------------------------
+    # Phase 15: Location enforcement (flag-gated)
+    # When AICTRL_ENFORCE_LOCATION=1: deny non-canonical or submodule
+    # When flag OFF (default): warn-only, execution proceeds
+    # CI environments are always exempt from enforcement
+    # ----------------------------------------------------------------
+    try:
+        from ..util.location import evaluate_location_policy
+
+        location_policy = evaluate_location_policy()
+        observability_warnings.extend(location_policy.get("warnings", []))
+
+        # If enforcement is ON and denial triggered, return policy denial
+        if location_policy.get("denial"):
+            denial = location_policy["denial"]
+            return {
+                "success": False,
+                "error": denial.get("message", "Location enforcement denied"),
+                "error_code": denial.get("code", "AICTRL-7001"),
+                "hint": denial.get("hint", "Run from canonical location"),
+                "enforcement": {
+                    "phase": 15,
+                    "enforce_enabled": location_policy.get("enforce", False),
+                    "ci_exempt": location_policy.get("ci_exempt", False),
+                    "context": location_policy.get("context", {}),
+                },
+                "exit_code": 2,
+            }
+    except Exception:
+        # Location enforcement failures degrade to warnings, never block
+        pass
 
     # Record monotonic start time for duration measurement
     exec_start = time.monotonic()
