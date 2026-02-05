@@ -7,6 +7,7 @@ Error code ranges per docs/spec/v1.md:
 - AICTRL-3xxx: Network errors
 - AICTRL-4xxx: AI/Container errors
 - AICTRL-5xxx: AI interface errors
+- AICTRL-7xxx: Location enforcement errors (Phase 15)
 
 Note: Legacy BBAIL-xxxx codes are preserved for backward compatibility.
 """
@@ -69,6 +70,11 @@ class ErrorCodes:
     PR_GH_NOT_AUTHENTICATED = "AICTRL-5022"
     PR_GIT_PUSH_FAILED = "AICTRL-5023"
     PR_CREATE_FAILED = "AICTRL-5024"
+
+    # Location enforcement errors (7xxx) - Phase 15
+    LOCATION_NON_CANONICAL = "AICTRL-7001"
+    LOCATION_SUBMODULE_DETECTED = "AICTRL-7002"
+    LOCATION_REMOTE_MISMATCH = "AICTRL-7003"
 
 
 class AICtrlError(Exception):
