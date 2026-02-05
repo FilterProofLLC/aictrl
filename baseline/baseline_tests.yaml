@@ -4,7 +4,7 @@
 
 baseline:
   name: "AICtrl 1.x Baseline Test"
-  version: "1.4"
+  version: "1.5"
   description: |
     Canonical baseline tests for AICtrl CLI governance and safety guarantees.
     These tests represent durable compliance artifacts for audits.
@@ -732,3 +732,141 @@ tests:
       nist: "AU-10"
       federal: "EO-14110-4.2"
     notes: "Valid proposal review succeeds with verified hash."
+
+  # ============================================================================
+  # Controlled Execution Approve/Run (Phase 12 Part 2)
+  # ============================================================================
+  - id: "BL-230"
+    title: "Approve succeeds for valid proposal"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl230-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl230-proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl230-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl230-approval.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"success": true'
+        - '"approval_id"'
+        - '"content_hash"'
+        - '"approved_by"'
+      ascii_only: true
+    spec:
+      internal: "EXEC-APPROVE-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Approval creates valid approval artifact binding to proposal."
+
+  - id: "BL-231"
+    title: "Approve fails for tampered proposal"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl231-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl231-proposal.json 2>/dev/null && sed 's/\\/etc\\/hosts/\\/etc\\/passwd/' /tmp/aictrl-bl231-proposal.json > /tmp/aictrl-bl231-tampered.json && python -m aictrl exec approve --proposal /tmp/aictrl-bl231-tampered.json --approved-by 'baseline-test' --out /tmp/aictrl-bl231-approval.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - '"error_code": "AICTRL-9006"'
+      ascii_only: true
+    spec:
+      internal: "EXEC-APPROVE-TAMPER-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Cannot approve tampered proposal - hash mismatch detected."
+
+  - id: "BL-232"
+    title: "Run fails without approval"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl232-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl232-proposal.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl232-proposal.json --approval /tmp/nonexistent-approval.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - '"error_code": "AICTRL-9013"'
+        - 'not found'
+      ascii_only: true
+    spec:
+      internal: "EXEC-RUN-NO-APPROVAL-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Cannot run without valid approval artifact."
+
+  - id: "BL-233"
+    title: "Run fails with mismatched approval hash"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl233-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl233-proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl233-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl233-approval.json 2>/dev/null && sed 's/\\/etc\\/hosts/\\/etc\\/passwd/' /tmp/aictrl-bl233-proposal.json > /tmp/aictrl-bl233-modified.json && python -m aictrl exec run --proposal /tmp/aictrl-bl233-modified.json --approval /tmp/aictrl-bl233-approval.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - 'hash'
+      ascii_only: true
+    spec:
+      internal: "EXEC-RUN-HASH-MISMATCH-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Run fails if proposal modified after approval."
+
+  - id: "BL-234"
+    title: "Run fails without --dangerous for dangerous adapter"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl234-*.json && python -m aictrl exec propose --action write --target /tmp/aictrl-bl234-test.txt --adapter file-write --out /tmp/aictrl-bl234-proposal.json --dangerous 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl234-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl234-approval.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl234-proposal.json --approval /tmp/aictrl-bl234-approval.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - '"error_code": "AICTRL-9003"'
+        - '--dangerous'
+      ascii_only: true
+    spec:
+      internal: "EXEC-RUN-DANGEROUS-GATE-001"
+      nist: "SC-12"
+      federal: "EO-14110-4.2"
+    notes: "Dangerous operations require --dangerous at BOTH propose AND run."
+
+  - id: "BL-235"
+    title: "Run succeeds for safe adapter with valid approval"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl235-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl235-proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl235-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl235-approval.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl235-proposal.json --approval /tmp/aictrl-bl235-approval.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"success": true'
+        - '"adapter": "noop"'
+        - '"approved_by"'
+        - '"executed_at"'
+      ascii_only: true
+    spec:
+      internal: "EXEC-RUN-SUCCESS-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Safe adapter executes successfully with valid approval chain."
+
+  - id: "BL-236"
+    title: "Run blocked for unknown adapter"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl236-*.json && python3 -c 'import hashlib,json; c={\"action\":\"read\",\"target\":\"/tmp\",\"adapter\":\"unknown-adapter\",\"subject\":\"\",\"inputs\":{},\"created_at\":\"2026-01-01T00:00:00Z\"}; h=hashlib.sha256(json.dumps(c,sort_keys=True,separators=(\",\",\":\")).encode()).hexdigest(); p={\"schema_version\":\"1.0\",\"proposal_id\":\"test-bl236\",\"created_at\":\"2026-01-01T00:00:00Z\",\"phase\":12,\"status\":\"proposed\",\"content_hash\":h,\"dangerous_requested\":False,\"request\":{\"action\":\"read\",\"target\":\"/tmp\",\"adapter\":\"unknown-adapter\",\"subject\":\"\",\"inputs\":{}}}; a={\"schema_version\":\"1.0\",\"approval_id\":\"test-approval-bl236\",\"approved_at\":\"2026-01-01T00:00:00Z\",\"approved_by\":\"test\",\"proposal_id\":\"test-bl236\",\"content_hash\":h,\"status\":\"approved\"}; json.dump(p,open(\"/tmp/aictrl-bl236-proposal.json\",\"w\")); json.dump(a,open(\"/tmp/aictrl-bl236-approval.json\",\"w\"))' && python -m aictrl exec run --proposal /tmp/aictrl-bl236-proposal.json --approval /tmp/aictrl-bl236-approval.json"]
+    expect:
+      exit_code: 2
+      stdout_contains:
+        - '"success": false'
+        - 'not in allowlist'
+      ascii_only: true
+    spec:
+      internal: "EXEC-RUN-ADAPTER-DENY-001"
+      nist: "SC-7"
+      federal: "EO-14110-4.2"
+    notes: "Unknown adapters are blocked by default-deny allowlist."
+
+  - id: "BL-237"
+    title: "Approval binds to proposal_id and content_hash"
+    command: ["bash", "-c",
+              "rm -f /tmp/aictrl-bl237-*.json && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl237-proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl237-proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl237-approval.json && cat /tmp/aictrl-bl237-approval.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"proposal_id"'
+        - '"content_hash"'
+        - '"approved_by"'
+      ascii_only: true
+    spec:
+      internal: "EXEC-APPROVE-BINDING-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.2"
+    notes: "Approval artifact contains proposal_id and content_hash binding."
