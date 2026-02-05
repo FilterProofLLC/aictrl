@@ -5,6 +5,7 @@ These tests verify that:
 2. When AICTRL_ENFORCE_LOCATION=1: non-canonical triggers denial
 3. When AICTRL_ENFORCE_LOCATION=1: submodule triggers denial
 4. CI environment exempts from enforcement even when flag ON
+5. Phase 15.2: Remote mismatch, detached HEAD, symlinked path
 
 IMPORTANT: These tests use mocking and do NOT require actual git operations.
 """
@@ -22,6 +23,9 @@ from aictrl.util.location import (
     CANONICAL_PATH,
     LOCATION_NON_CANONICAL,
     LOCATION_SUBMODULE_DETECTED,
+    LOCATION_REMOTE_MISMATCH,
+    LOCATION_DETACHED_HEAD,
+    LOCATION_SYMLINK_DETECTED,
     ENFORCE_LOCATION_VAR,
     is_enforcement_enabled,
     is_ci_environment,
@@ -29,6 +33,11 @@ from aictrl.util.location import (
     evaluate_location_policy,
     _find_git_root,
     _is_submodule,
+    _get_origin_remote_url,
+    _normalize_remote_url,
+    _is_canonical_remote,
+    _is_detached_head,
+    _is_symlinked_path,
 )
 from aictrl.util.invariants import ExecutionContext
 
@@ -93,6 +102,11 @@ class TestDetectLocationContext:
         assert "is_submodule" in result
         assert "parent_repo" in result
         assert "detection_error" in result
+        # Phase 15.2 fields
+        assert "origin_remote" in result
+        assert "is_canonical_remote" in result
+        assert "is_detached_head" in result
+        assert "is_symlinked" in result
 
     def test_canonical_when_path_matches(self):
         """Should report is_canonical=True when paths match."""
@@ -304,3 +318,472 @@ class TestCIDetection:
             # (may be sandbox, but not CI)
             # Just verify no crash and returns a boolean
             assert isinstance(result, bool)
+
+
+# =============================================================================
+# Phase 15.2 Tests
+# =============================================================================
+
+
+class TestRemoteUrlNormalization:
+    """Tests for remote URL normalization (Phase 15.2)."""
+
+    def test_normalize_https_url(self):
+        """Should normalize HTTPS URL."""
+        url = "https://github.com/FilterProofLLC/aictrl.git"
+        normalized = _normalize_remote_url(url)
+        assert normalized == "github.com/filterproofllc/aictrl"
+
+    def test_normalize_https_without_git_suffix(self):
+        """Should handle HTTPS URL without .git suffix."""
+        url = "https://github.com/FilterProofLLC/aictrl"
+        normalized = _normalize_remote_url(url)
+        assert normalized == "github.com/filterproofllc/aictrl"
+
+    def test_normalize_ssh_url(self):
+        """Should normalize SSH URL (git@...) to same form as HTTPS."""
+        url = "git@github.com:FilterProofLLC/aictrl.git"
+        normalized = _normalize_remote_url(url)
+        assert normalized == "github.com/filterproofllc/aictrl"
+
+    def test_normalize_ssh_protocol_url(self):
+        """Should normalize ssh:// URL to same form as HTTPS."""
+        url = "ssh://git@github.com/FilterProofLLC/aictrl.git"
+        normalized = _normalize_remote_url(url)
+        assert normalized == "github.com/filterproofllc/aictrl"
+
+    def test_normalize_empty_url(self):
+        """Should handle empty URL."""
+        assert _normalize_remote_url("") == ""
+        assert _normalize_remote_url(None) == ""
+
+    def test_case_insensitive(self):
+        """Should be case-insensitive."""
+        url1 = "https://github.com/FILTERPROOFLLC/AICTRL"
+        url2 = "https://github.com/filterproofllc/aictrl"
+        assert _normalize_remote_url(url1) == _normalize_remote_url(url2)
+
+    def test_all_formats_normalize_same(self):
+        """All URL formats should normalize to the same string."""
+        urls = [
+            "https://github.com/FilterProofLLC/aictrl",
+            "https://github.com/FilterProofLLC/aictrl.git",
+            "git@github.com:FilterProofLLC/aictrl",
+            "git@github.com:FilterProofLLC/aictrl.git",
+            "ssh://git@github.com/FilterProofLLC/aictrl",
+            "ssh://git@github.com/FilterProofLLC/aictrl.git",
+        ]
+        normalized = [_normalize_remote_url(u) for u in urls]
+        assert all(n == "github.com/filterproofllc/aictrl" for n in normalized)
+
+
+class TestIsCanonicalRemote:
+    """Tests for canonical remote detection (Phase 15.2)."""
+
+    def test_https_canonical(self):
+        """Should accept canonical HTTPS URL."""
+        assert _is_canonical_remote("https://github.com/FilterProofLLC/aictrl") is True
+        assert _is_canonical_remote("https://github.com/FilterProofLLC/aictrl.git") is True
+
+    def test_ssh_canonical(self):
+        """Should accept canonical SSH URL."""
+        assert _is_canonical_remote("git@github.com:FilterProofLLC/aictrl") is True
+        assert _is_canonical_remote("git@github.com:FilterProofLLC/aictrl.git") is True
+
+    def test_ssh_protocol_canonical(self):
+        """Should accept canonical ssh:// URL."""
+        assert _is_canonical_remote("ssh://git@github.com/FilterProofLLC/aictrl") is True
+        assert _is_canonical_remote("ssh://git@github.com/FilterProofLLC/aictrl.git") is True
+
+    def test_fork_not_canonical(self):
+        """Should reject fork URL."""
+        assert _is_canonical_remote("https://github.com/someuser/aictrl") is False
+        assert _is_canonical_remote("git@github.com:someuser/aictrl.git") is False
+
+    def test_different_repo_not_canonical(self):
+        """Should reject different repo URL."""
+        assert _is_canonical_remote("https://github.com/FilterProofLLC/other-repo") is False
+
+    def test_none_url_is_canonical(self):
+        """Should treat None URL as canonical (unknown = no denial)."""
+        assert _is_canonical_remote(None) is True
+
+    def test_case_insensitive_match(self):
+        """Should match case-insensitively."""
+        assert _is_canonical_remote("HTTPS://GITHUB.COM/FILTERPROOFLLC/AICTRL") is True
+
+
+class TestRemoteMismatchEnforcement:
+    """Tests for AICTRL-7003 remote mismatch enforcement (Phase 15.2)."""
+
+    def test_warning_when_remote_mismatches_enforcement_off(self):
+        """Should warn (not deny) on remote mismatch when enforcement OFF."""
+        with mock.patch.dict(os.environ, {}, clear=True):
+            os.environ.pop(ENFORCE_LOCATION_VAR, None)
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._get_origin_remote_url",
+                    return_value="https://github.com/someuser/aictrl-fork",
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            result = evaluate_location_policy()
+                            assert result["denial"] is None
+                            # Should have warning for remote mismatch
+                            codes = [w.get("code") for w in result["warnings"]]
+                            assert LOCATION_REMOTE_MISMATCH in codes
+
+    def test_denial_when_remote_mismatches_enforcement_on(self):
+        """Should deny on remote mismatch when enforcement ON."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._get_origin_remote_url",
+                    return_value="https://github.com/someuser/aictrl-fork",
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            result = evaluate_location_policy()
+                            assert result["denial"] is not None
+                            assert result["denial"]["code"] == LOCATION_REMOTE_MISMATCH
+
+    def test_no_denial_when_remote_unknown(self):
+        """Should NOT deny when origin remote is unknown."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._get_origin_remote_url",
+                    return_value=None,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            result = evaluate_location_policy()
+                            # No denial when remote is unknown
+                            assert result["denial"] is None
+
+    def test_ci_exempt_from_remote_mismatch(self):
+        """Should NOT deny in CI even with remote mismatch."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._get_origin_remote_url",
+                    return_value="https://github.com/someuser/aictrl-fork",
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=True,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            result = evaluate_location_policy()
+                            assert result["ci_exempt"] is True
+                            assert result["denial"] is None
+
+
+class TestDetachedHeadDetection:
+    """Tests for detached HEAD detection (Phase 15.2)."""
+
+    def test_attached_head_detected(self):
+        """Should detect attached HEAD."""
+        # Mock subprocess to return success (attached)
+        mock_result = mock.Mock()
+        mock_result.returncode = 0
+        mock_result.stdout = "refs/heads/main"
+        with mock.patch("subprocess.run", return_value=mock_result):
+            assert _is_detached_head() is False
+
+    def test_detached_head_detected(self):
+        """Should detect detached HEAD."""
+        # Mock subprocess to return failure (detached)
+        mock_result = mock.Mock()
+        mock_result.returncode = 1
+        mock_result.stdout = ""
+        with mock.patch("subprocess.run", return_value=mock_result):
+            assert _is_detached_head() is True
+
+    def test_detection_error_returns_none(self):
+        """Should return None on detection error."""
+        with mock.patch("subprocess.run", side_effect=Exception("test error")):
+            assert _is_detached_head() is None
+
+
+class TestDetachedHeadEnforcement:
+    """Tests for AICTRL-7004 detached HEAD enforcement (Phase 15.2)."""
+
+    def test_warning_when_detached_enforcement_off(self):
+        """Should warn (not deny) on detached HEAD when enforcement OFF."""
+        with mock.patch.dict(os.environ, {}, clear=True):
+            os.environ.pop(ENFORCE_LOCATION_VAR, None)
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_detached_head",
+                    return_value=True,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                result = evaluate_location_policy()
+                                assert result["denial"] is None
+                                codes = [w.get("code") for w in result["warnings"]]
+                                assert LOCATION_DETACHED_HEAD in codes
+
+    def test_denial_when_detached_enforcement_on(self):
+        """Should deny on detached HEAD when enforcement ON."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_detached_head",
+                    return_value=True,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                result = evaluate_location_policy()
+                                assert result["denial"] is not None
+                                assert result["denial"]["code"] == LOCATION_DETACHED_HEAD
+
+    def test_ci_exempt_from_detached_head(self):
+        """Should NOT deny in CI even with detached HEAD."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_detached_head",
+                    return_value=True,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=True,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                result = evaluate_location_policy()
+                                assert result["ci_exempt"] is True
+                                assert result["denial"] is None
+
+
+class TestSymlinkedPathDetection:
+    """Tests for symlinked path detection (Phase 15.2)."""
+
+    def test_symlink_detected(self, tmp_path):
+        """Should detect symlinked path."""
+        # Create a real directory and a symlink to it
+        real_dir = tmp_path / "real"
+        real_dir.mkdir()
+        link_dir = tmp_path / "link"
+        try:
+            link_dir.symlink_to(real_dir)
+            assert _is_symlinked_path(str(link_dir)) is True
+        except OSError:
+            pytest.skip("Symlinks not supported on this platform")
+
+    def test_real_path_not_detected_as_symlink(self, tmp_path):
+        """Should NOT detect real path as symlinked."""
+        real_dir = tmp_path / "real"
+        real_dir.mkdir()
+        assert _is_symlinked_path(str(real_dir)) is False
+
+    def test_empty_path_not_symlinked(self):
+        """Should handle empty path."""
+        assert _is_symlinked_path("") is False
+        assert _is_symlinked_path(None) is False
+
+
+class TestSymlinkedPathEnforcement:
+    """Tests for AICTRL-7005 symlinked path enforcement (Phase 15.2)."""
+
+    def test_warning_when_symlinked_enforcement_off(self, tmp_path):
+        """Should warn (not deny) on symlinked path when enforcement OFF."""
+        # Create symlink structure
+        real_dir = tmp_path / "real"
+        real_dir.mkdir()
+        link_dir = tmp_path / "link"
+        try:
+            link_dir.symlink_to(real_dir)
+        except OSError:
+            pytest.skip("Symlinks not supported on this platform")
+
+        with mock.patch.dict(os.environ, {}, clear=True):
+            os.environ.pop(ENFORCE_LOCATION_VAR, None)
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_symlinked_path",
+                    return_value=True,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                with mock.patch(
+                                    "aictrl.util.location._is_detached_head",
+                                    return_value=False,
+                                ):
+                                    result = evaluate_location_policy()
+                                    assert result["denial"] is None
+                                    codes = [w.get("code") for w in result["warnings"]]
+                                    assert LOCATION_SYMLINK_DETECTED in codes
+
+    def test_denial_when_symlinked_enforcement_on(self):
+        """Should deny on symlinked path when enforcement ON."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_symlinked_path",
+                    return_value=True,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                with mock.patch(
+                                    "aictrl.util.location._is_detached_head",
+                                    return_value=False,
+                                ):
+                                    result = evaluate_location_policy()
+                                    assert result["denial"] is not None
+                                    assert result["denial"]["code"] == LOCATION_SYMLINK_DETECTED
+
+    def test_ci_exempt_from_symlinked_path(self):
+        """Should NOT deny in CI even with symlinked path."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_symlinked_path",
+                    return_value=True,
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=True,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                with mock.patch(
+                                    "aictrl.util.location._is_detached_head",
+                                    return_value=False,
+                                ):
+                                    result = evaluate_location_policy()
+                                    assert result["ci_exempt"] is True
+                                    assert result["denial"] is None
+
+
+class TestDetectLocationContextPhase152:
+    """Tests for new fields in detect_location_context (Phase 15.2)."""
+
+    def test_context_has_new_fields(self):
+        """Should include Phase 15.2 fields."""
+        result = detect_location_context()
+        assert "origin_remote" in result
+        assert "is_canonical_remote" in result
+        assert "is_detached_head" in result
+        assert "is_symlinked" in result
+
+    def test_context_defaults_for_unknown(self):
+        """Should have safe defaults when detection fails."""
+        with mock.patch(
+            "aictrl.util.location._get_origin_remote_url",
+            return_value=None,
+        ):
+            with mock.patch(
+                "aictrl.util.location._is_detached_head",
+                return_value=None,
+            ):
+                result = detect_location_context()
+                # Unknown remote = canonical (no denial)
+                assert result["is_canonical_remote"] is True
+                # Unknown HEAD state = None
+                assert result["is_detached_head"] is None
