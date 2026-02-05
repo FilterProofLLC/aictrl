@@ -466,3 +466,91 @@ def evaluate_location_policy() -> dict[str, Any]:
         "warnings": warnings,
         "denial": denial,
     }
+
+
+def diagnose_location() -> dict[str, Any]:
+    """Run location diagnosis for operability (Phase 16).
+
+    This function provides a comprehensive diagnostic view of the
+    current location state for operators and developers.
+
+    IMPORTANT: This function ALWAYS succeeds (never raises).
+    It is for diagnosis only, not enforcement.
+
+    Returns:
+        Dictionary with all location state fields and a status summary.
+    """
+    context = detect_location_context()
+    enforce = is_enforcement_enabled()
+    ci = is_ci_environment()
+
+    # Determine overall status
+    violations = []
+    if not context.get("is_canonical") and not context.get("detection_error"):
+        violations.append(LOCATION_NON_CANONICAL)
+    if context.get("is_submodule"):
+        violations.append(LOCATION_SUBMODULE_DETECTED)
+    if not context.get("is_canonical_remote") and context.get("origin_remote"):
+        violations.append(LOCATION_REMOTE_MISMATCH)
+    if context.get("is_detached_head") is True:
+        violations.append(LOCATION_DETACHED_HEAD)
+    if context.get("is_symlinked"):
+        violations.append(LOCATION_SYMLINK_DETECTED)
+
+    if context.get("detection_error"):
+        status = "ERROR (detection failed)"
+    elif not violations:
+        status = "OK (no violations detected)"
+    else:
+        status = "VIOLATIONS DETECTED: " + ", ".join(violations)
+
+    return {
+        "cwd_realpath": context.get("actual_path"),
+        "canonical_path": context.get("canonical_path"),
+        "is_canonical": context.get("is_canonical"),
+        "is_submodule": context.get("is_submodule"),
+        "parent_repo": context.get("parent_repo"),
+        "origin_url": context.get("origin_remote"),
+        "is_canonical_remote": context.get("is_canonical_remote"),
+        "is_detached_head": context.get("is_detached_head"),
+        "is_symlinked": context.get("is_symlinked"),
+        "enforcement_enabled": enforce,
+        "ci_detected": ci,
+        "detection_error": context.get("detection_error"),
+        "violations": violations,
+        "status": status,
+    }
+
+
+def format_diagnosis_text(diag: dict[str, Any]) -> str:
+    """Format diagnosis dictionary as human-readable text.
+
+    Args:
+        diag: Diagnosis dictionary from diagnose_location().
+
+    Returns:
+        ASCII text suitable for terminal output.
+    """
+    lines = [
+        "=== aictrl location diagnosis ===",
+        f"cwd_realpath:        {diag.get('cwd_realpath', 'unknown')}",
+        f"canonical_path:      {diag.get('canonical_path', 'unknown')}",
+        f"is_canonical:        {str(diag.get('is_canonical', False)).lower()}",
+        f"is_submodule:        {str(diag.get('is_submodule', False)).lower()}",
+    ]
+    if diag.get("parent_repo"):
+        lines.append(f"parent_repo:         {diag.get('parent_repo')}")
+    lines.extend([
+        f"origin_url:          {diag.get('origin_url') or '(not detected)'}",
+        f"is_canonical_remote: {str(diag.get('is_canonical_remote', True)).lower()}",
+        f"is_detached_head:    {str(diag.get('is_detached_head')).lower() if diag.get('is_detached_head') is not None else 'unknown'}",
+        f"is_symlinked:        {str(diag.get('is_symlinked', False)).lower()}",
+        f"enforcement_enabled: {str(diag.get('enforcement_enabled', False)).lower()}",
+        f"ci_detected:         {str(diag.get('ci_detected', False)).lower()}",
+    ])
+    if diag.get("detection_error"):
+        lines.append(f"detection_error:     {diag.get('detection_error')}")
+    if diag.get("violations"):
+        lines.append(f"violations:          {', '.join(diag.get('violations', []))}")
+    lines.append(f"status:              {diag.get('status', 'unknown')}")
+    return "\n".join(lines)

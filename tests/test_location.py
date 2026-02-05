@@ -1,4 +1,4 @@
-"""Tests for location enforcement (Phase 15).
+"""Tests for location enforcement (Phase 15 + Phase 16).
 
 These tests verify that:
 1. When AICTRL_ENFORCE_LOCATION is unset: warn-only, no denial
@@ -6,6 +6,7 @@ These tests verify that:
 3. When AICTRL_ENFORCE_LOCATION=1: submodule triggers denial
 4. CI environment exempts from enforcement even when flag ON
 5. Phase 15.2: Remote mismatch, detached HEAD, symlinked path
+6. Phase 16: Operability - diagnose command, message format stability
 
 IMPORTANT: These tests use mocking and do NOT require actual git operations.
 """
@@ -31,6 +32,8 @@ from aictrl.util.location import (
     is_ci_environment,
     detect_location_context,
     evaluate_location_policy,
+    diagnose_location,
+    format_diagnosis_text,
     _find_git_root,
     _is_submodule,
     _get_origin_remote_url,
@@ -787,3 +790,335 @@ class TestDetectLocationContextPhase152:
                 assert result["is_canonical_remote"] is True
                 # Unknown HEAD state = None
                 assert result["is_detached_head"] is None
+
+
+# =============================================================================
+# Phase 16 Tests - Operability Hardening
+# =============================================================================
+
+
+class TestDiagnoseLocation:
+    """Tests for diagnose_location function (Phase 16)."""
+
+    def test_diagnose_returns_dict(self):
+        """diagnose_location should return a dictionary."""
+        result = diagnose_location()
+        assert isinstance(result, dict)
+
+    def test_diagnose_has_required_keys(self):
+        """diagnose_location should have all required keys."""
+        result = diagnose_location()
+        required_keys = [
+            "cwd_realpath",
+            "canonical_path",
+            "is_canonical",
+            "is_submodule",
+            "origin_url",
+            "is_canonical_remote",
+            "is_detached_head",
+            "is_symlinked",
+            "enforcement_enabled",
+            "ci_detected",
+            "violations",
+            "status",
+        ]
+        for key in required_keys:
+            assert key in result, f"Missing key: {key}"
+
+    def test_diagnose_violations_is_list(self):
+        """violations should be a list."""
+        result = diagnose_location()
+        assert isinstance(result["violations"], list)
+
+    def test_diagnose_status_is_string(self):
+        """status should be a string."""
+        result = diagnose_location()
+        assert isinstance(result["status"], str)
+
+    def test_diagnose_detects_violations(self):
+        """Should detect violations when present."""
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value="/tmp/non-canonical",
+        ):
+            with mock.patch(
+                "aictrl.util.location._get_origin_remote_url",
+                return_value="https://github.com/someuser/fork",
+            ):
+                result = diagnose_location()
+                assert len(result["violations"]) > 0
+                assert LOCATION_NON_CANONICAL in result["violations"]
+                assert LOCATION_REMOTE_MISMATCH in result["violations"]
+
+    def test_diagnose_ok_when_canonical(self):
+        """Should report OK when running from canonical location."""
+        canonical_resolved = os.path.realpath(CANONICAL_PATH)
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value=canonical_resolved,
+        ):
+            with mock.patch(
+                "aictrl.util.location._is_submodule",
+                return_value=False,
+            ):
+                with mock.patch(
+                    "aictrl.util.location._get_origin_remote_url",
+                    return_value="https://github.com/FilterProofLLC/aictrl",
+                ):
+                    with mock.patch(
+                        "aictrl.util.location._is_detached_head",
+                        return_value=False,
+                    ):
+                        result = diagnose_location()
+                        assert result["violations"] == []
+                        assert "OK" in result["status"]
+
+
+class TestFormatDiagnosisText:
+    """Tests for format_diagnosis_text function (Phase 16)."""
+
+    def test_format_returns_string(self):
+        """format_diagnosis_text should return a string."""
+        diag = diagnose_location()
+        text = format_diagnosis_text(diag)
+        assert isinstance(text, str)
+
+    def test_format_is_ascii_only(self):
+        """Output should be ASCII-only."""
+        diag = diagnose_location()
+        text = format_diagnosis_text(diag)
+        # Check all characters are ASCII
+        assert all(ord(c) < 128 for c in text), "Non-ASCII characters found"
+
+    def test_format_contains_header(self):
+        """Output should contain the header."""
+        diag = diagnose_location()
+        text = format_diagnosis_text(diag)
+        assert "=== aictrl location diagnosis ===" in text
+
+    def test_format_contains_required_fields(self):
+        """Output should contain all required fields."""
+        diag = diagnose_location()
+        text = format_diagnosis_text(diag)
+        assert "cwd_realpath:" in text
+        assert "canonical_path:" in text
+        assert "is_canonical:" in text
+        assert "enforcement_enabled:" in text
+        assert "ci_detected:" in text
+        assert "status:" in text
+
+
+class TestMessageFormatStability:
+    """Tests for message format stability (Phase 16)."""
+
+    def test_warning_has_required_keys(self):
+        """Warnings should have source, artifact, code, message keys."""
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value="/tmp/non-canonical",
+        ):
+            with mock.patch(
+                "aictrl.util.location.is_ci_environment",
+                return_value=False,
+            ):
+                result = evaluate_location_policy()
+                for warning in result["warnings"]:
+                    assert "source" in warning, "Missing 'source' key in warning"
+                    assert "artifact" in warning, "Missing 'artifact' key in warning"
+                    assert "message" in warning, "Missing 'message' key in warning"
+                    # code is optional for detection_error warnings
+                    if "detection" not in warning.get("message", "").lower():
+                        assert "code" in warning, "Missing 'code' key in warning"
+
+    def test_warning_source_is_observability(self):
+        """Warning source should be 'observability'."""
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value="/tmp/non-canonical",
+        ):
+            with mock.patch(
+                "aictrl.util.location.is_ci_environment",
+                return_value=False,
+            ):
+                result = evaluate_location_policy()
+                for warning in result["warnings"]:
+                    assert warning["source"] == "observability"
+
+    def test_warning_artifact_is_location(self):
+        """Warning artifact should be 'location'."""
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value="/tmp/non-canonical",
+        ):
+            with mock.patch(
+                "aictrl.util.location.is_ci_environment",
+                return_value=False,
+            ):
+                result = evaluate_location_policy()
+                for warning in result["warnings"]:
+                    assert warning["artifact"] == "location"
+
+    def test_warning_messages_are_ascii(self):
+        """Warning messages should be ASCII-only."""
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value="/tmp/non-canonical",
+        ):
+            with mock.patch(
+                "aictrl.util.location.is_ci_environment",
+                return_value=False,
+            ):
+                result = evaluate_location_policy()
+                for warning in result["warnings"]:
+                    msg = warning["message"]
+                    assert all(ord(c) < 128 for c in msg), f"Non-ASCII in: {msg}"
+
+    def test_denial_has_required_keys(self):
+        """Denials should have code, message, hint keys."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value="/tmp/non-canonical",
+            ):
+                with mock.patch(
+                    "aictrl.util.location.is_ci_environment",
+                    return_value=False,
+                ):
+                    result = evaluate_location_policy()
+                    assert result["denial"] is not None
+                    denial = result["denial"]
+                    assert "code" in denial, "Missing 'code' key in denial"
+                    assert "message" in denial, "Missing 'message' key in denial"
+                    assert "hint" in denial, "Missing 'hint' key in denial"
+
+    def test_error_codes_are_valid(self):
+        """Error codes should match AICTRL-7xxx pattern."""
+        import re
+        valid_codes = [
+            LOCATION_NON_CANONICAL,
+            LOCATION_SUBMODULE_DETECTED,
+            LOCATION_REMOTE_MISMATCH,
+            LOCATION_DETACHED_HEAD,
+            LOCATION_SYMLINK_DETECTED,
+        ]
+        pattern = r"^AICTRL-700[1-5]$"
+        for code in valid_codes:
+            assert re.match(pattern, code), f"Invalid code format: {code}"
+
+
+class TestCLIDiagnoseLocation:
+    """Tests for diagnose-location CLI command (Phase 16)."""
+
+    def test_cli_diagnose_exits_zero(self):
+        """diagnose-location should always exit 0."""
+        from aictrl.cli import main
+        # Run from canonical location
+        exit_code = main(["diagnose-location"])
+        assert exit_code == 0
+
+    def test_cli_diagnose_exits_zero_with_violations(self):
+        """diagnose-location should exit 0 even with violations."""
+        from aictrl.cli import main
+        with mock.patch(
+            "aictrl.util.location._find_git_root",
+            return_value="/tmp/non-canonical",
+        ):
+            exit_code = main(["diagnose-location"])
+            assert exit_code == 0
+
+    def test_cli_diagnose_json_output(self):
+        """diagnose-location --json should produce valid JSON."""
+        import json
+        from io import StringIO
+        from aictrl.cli import main
+        
+        with mock.patch("sys.stdout", new_callable=StringIO) as mock_stdout:
+            exit_code = main(["diagnose-location", "--json"])
+            output = mock_stdout.getvalue()
+            # Should be valid JSON
+            data = json.loads(output)
+            assert "cwd_realpath" in data
+            assert "status" in data
+        assert exit_code == 0
+
+
+class TestEnforcementDeterminism:
+    """Tests for enforcement determinism (Phase 16)."""
+
+    def test_no_denial_when_unknown_remote(self):
+        """Should NOT deny when origin remote is unknown."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._get_origin_remote_url",
+                    return_value=None,  # Unknown
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            result = evaluate_location_policy()
+                            # Should not deny - unknown remote means no proven mismatch
+                            assert result["denial"] is None
+
+    def test_no_denial_when_unknown_head_state(self):
+        """Should NOT deny for detached HEAD when state is unknown."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value=os.path.realpath(CANONICAL_PATH),
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_detached_head",
+                    return_value=None,  # Unknown
+                ):
+                    with mock.patch(
+                        "aictrl.util.location.is_ci_environment",
+                        return_value=False,
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_submodule",
+                            return_value=False,
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location._get_origin_remote_url",
+                                return_value="https://github.com/FilterProofLLC/aictrl",
+                            ):
+                                result = evaluate_location_policy()
+                                # Should not deny - unknown HEAD state
+                                # (denial only when is_detached_head is True)
+                                assert result["denial"] is None
+
+    def test_ci_always_exempt(self):
+        """CI should ALWAYS be exempt, regardless of violations."""
+        with mock.patch.dict(os.environ, {ENFORCE_LOCATION_VAR: "1"}):
+            with mock.patch(
+                "aictrl.util.location._find_git_root",
+                return_value="/tmp/totally-wrong",
+            ):
+                with mock.patch(
+                    "aictrl.util.location._is_submodule",
+                    return_value=True,  # Violation
+                ):
+                    with mock.patch(
+                        "aictrl.util.location._get_origin_remote_url",
+                        return_value="https://github.com/evil/fork",  # Violation
+                    ):
+                        with mock.patch(
+                            "aictrl.util.location._is_detached_head",
+                            return_value=True,  # Violation
+                        ):
+                            with mock.patch(
+                                "aictrl.util.location.is_ci_environment",
+                                return_value=True,  # CI detected
+                            ):
+                                result = evaluate_location_policy()
+                                assert result["ci_exempt"] is True
+                                assert result["denial"] is None
