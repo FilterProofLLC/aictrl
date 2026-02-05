@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "manifest_version": "1.0",
-  "baseline_name": "AICtrl 1.0.x Baseline Test",
-  "baseline_version": "1.1.0",
+  "baseline_name": "AICtrl 1.x Baseline Test",
+  "baseline_version": "1.6.0",
   "schema_version": "1.1",
   "min_aictrl_version": ">= 1.0.0",
   "min_version_note": "Minimum AICtrl version required; runtime version captured in attestation",
@@ -33,16 +33,21 @@
     "BL-090 to BL-099": "ASCII output compliance",
     "BL-100 to BL-109": "Evidence and audit trail",
     "BL-110 to BL-119": "Determinism verification",
-    "BL-120 to BL-129": "Cryptographic operations (Phase 9)"
+    "BL-120 to BL-129": "Cryptographic operations (Phase 9)",
+    "BL-200 to BL-209": "Real boot measurement (Phase 10)",
+    "BL-210 to BL-219": "Signed attestation (Phase 11)",
+    "BL-220 to BL-229": "Controlled execution propose/review (Phase 12 Part 1)",
+    "BL-230 to BL-239": "Controlled execution approve/run (Phase 12 Part 2)",
+    "BL-240 to BL-249": "Post-execution observability (Phase 14)"
   },
   "summary": {
-    "total_tests": 33,
-    "expected_pass": 32,
+    "total_tests": 58,
+    "expected_pass": 57,
     "expected_fail": 1,
     "expected_fail_note": "BL-080 tests host safety violation detection (must fail to pass baseline)",
     "pass_criteria": "PASS when unexpected_failures == 0",
     "nist_controls_covered": 14,
-    "internal_invariants_covered": 22,
+    "internal_invariants_covered": 24,
     "federal_policies_covered": 5
   },
   "spec_frameworks": {
