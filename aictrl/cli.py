@@ -45,6 +45,10 @@ from .commands.exec import (
     get_boundary_info,
     get_readiness_info,
 )
+from .util.location import (
+    diagnose_location,
+    format_diagnosis_text,
+)
 from .commands.demo import run_demo
 from .phases import get_current_phase, get_enabled_capabilities
 from .util.errors import EXIT_SUCCESS, EXIT_FAILURE, EXIT_USAGE_ERROR, AICtrlError
@@ -98,6 +102,23 @@ def cmd_status(args) -> int:
     except Exception as e:
         output_json({"error": str(e)}, pretty=args.pretty)
         return EXIT_FAILURE
+
+
+def cmd_diagnose_location(args) -> int:
+    """Handle diagnose-location command (Phase 16).
+
+    This command ALWAYS exits 0 - it is for diagnosis only, not enforcement.
+    It prints location state to help operators understand their environment.
+    """
+    diag = diagnose_location()
+
+    if getattr(args, "json", False):
+        output_json(diag, pretty=getattr(args, "pretty", True))
+    else:
+        print(format_diagnosis_text(diag))
+
+    # Always exit 0 - this is diagnosis, not enforcement
+    return EXIT_SUCCESS
 
 
 def cmd_doctor(args) -> int:
@@ -1737,6 +1758,24 @@ def create_parser() -> argparse.ArgumentParser:
         help="Pretty-print JSON output",
     )
 
+    # Phase 16: diagnose-location command
+    diagnose_location_parser = subparsers.add_parser(
+        "diagnose-location",
+        help="Diagnose location state for operability (Phase 16, always exits 0)",
+    )
+    diagnose_location_parser.add_argument(
+        "--json",
+        action="store_true",
+        default=False,
+        help="Output as JSON instead of text",
+    )
+    diagnose_location_parser.add_argument(
+        "--pretty",
+        action="store_true",
+        default=True,
+        help="Pretty-print JSON output (only with --json)",
+    )
+
     return parser
 
 
@@ -1765,6 +1804,8 @@ def main(argv=None) -> int:
         return cmd_version(args)
     elif args.command == "status":
         return cmd_status(args)
+    elif args.command == "diagnose-location":
+        return cmd_diagnose_location(args)
     elif args.command == "demo":
         return cmd_demo(args)
     elif args.command == "doctor":
