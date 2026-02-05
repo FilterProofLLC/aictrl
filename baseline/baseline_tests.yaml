@@ -870,3 +870,94 @@ tests:
       nist: "AU-10"
       federal: "EO-14110-4.2"
     notes: "Approval artifact contains proposal_id and content_hash binding."
+
+  # ============================================================================
+  # Post-Execution Observability (Phase 14)
+  # ============================================================================
+  - id: "BL-240"
+    title: "Exec run creates execution receipt before adapter execution"
+    command: ["bash", "-c",
+              "rm -rf /tmp/aictrl-bl240 && mkdir -p /tmp/aictrl-bl240 && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl240/proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl240/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl240/approval.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl240/proposal.json --approval /tmp/aictrl-bl240/approval.json && ls /tmp/aictrl-bl240/receipt-*.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"receipt_created": true'
+        - '"receipt_id"'
+        - 'receipt-'
+      ascii_only: true
+    spec:
+      internal: "OBS-RECEIPT-001"
+      nist: "AU-3"
+      federal: "EO-14110-4.3"
+    notes: "Execution receipt is created in proposal directory before adapter runs."
+
+  - id: "BL-241"
+    title: "Exec run creates result attestation referencing receipt"
+    command: ["bash", "-c",
+              "rm -rf /tmp/aictrl-bl241 && mkdir -p /tmp/aictrl-bl241 && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl241/proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl241/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl241/approval.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl241/proposal.json --approval /tmp/aictrl-bl241/approval.json && cat /tmp/aictrl-bl241/attestation-*.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"attestation_created": true'
+        - '"attestation_id"'
+        - '"receipt_id"'
+        - '"receipt_hash"'
+        - '"result_hash"'
+      ascii_only: true
+    spec:
+      internal: "OBS-ATTEST-001"
+      nist: "AU-3"
+      federal: "EO-14110-4.3"
+    notes: "Result attestation references receipt_id and receipt_hash for chain integrity."
+
+  - id: "BL-242"
+    title: "Observability write failure does not block execution"
+    command: ["bash", "-c",
+              "rm -rf /tmp/aictrl-bl242 && mkdir -p /tmp/aictrl-bl242 && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl242/proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl242/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl242/approval.json 2>/dev/null && chmod 555 /tmp/aictrl-bl242 && python -m aictrl exec run --proposal /tmp/aictrl-bl242/proposal.json --approval /tmp/aictrl-bl242/approval.json; RC=$?; chmod 755 /tmp/aictrl-bl242; exit $RC"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"success": true'
+        - '"observability_warnings"'
+        - 'could not be created'
+      ascii_only: true
+    spec:
+      internal: "OBS-FAILSAFE-001"
+      nist: "SI-17"
+      federal: "EO-14110-4.3"
+    notes: "Execution succeeds even when observability artifacts cannot be written. Warnings surfaced in result."
+
+  - id: "BL-243"
+    title: "Receipt artifact content is ASCII-only"
+    command: ["bash", "-c",
+              "rm -rf /tmp/aictrl-bl243 && mkdir -p /tmp/aictrl-bl243 && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl243/proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl243/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl243/approval.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl243/proposal.json --approval /tmp/aictrl-bl243/approval.json 2>/dev/null && cat /tmp/aictrl-bl243/receipt-*.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"receipt_id"'
+        - '"proposal_id"'
+        - '"execution_context"'
+      ascii_only: true
+    spec:
+      internal: "OBS-ASCII-001"
+      nist: "AU-3"
+      federal: "EO-14110-4.1"
+    notes: "Receipt artifact is ASCII-only for audit compliance."
+
+  - id: "BL-244"
+    title: "Attestation includes result_hash for tamper detection"
+    command: ["bash", "-c",
+              "rm -rf /tmp/aictrl-bl244 && mkdir -p /tmp/aictrl-bl244 && python -m aictrl exec propose --action read --target /etc/hosts --adapter noop --out /tmp/aictrl-bl244/proposal.json 2>/dev/null && python -m aictrl exec approve --proposal /tmp/aictrl-bl244/proposal.json --approved-by 'baseline-test' --out /tmp/aictrl-bl244/approval.json 2>/dev/null && python -m aictrl exec run --proposal /tmp/aictrl-bl244/proposal.json --approval /tmp/aictrl-bl244/approval.json 2>/dev/null && cat /tmp/aictrl-bl244/attestation-*.json"]
+    expect:
+      exit_code: 0
+      stdout_contains:
+        - '"result_hash"'
+        - '"result_hash_algorithm": "sha256"'
+        - '"attestation_hash"'
+        - '"attestation_hash_algorithm": "sha256"'
+      ascii_only: true
+    spec:
+      internal: "OBS-RESULT-HASH-001"
+      nist: "AU-10"
+      federal: "EO-14110-4.3"
+    notes: "Attestation includes result_hash enabling tamper detection of execution results."
