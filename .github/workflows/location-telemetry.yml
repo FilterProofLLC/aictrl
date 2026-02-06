@@ -1,0 +1,68 @@
+name: Location Telemetry
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  diagnose-location:
+    name: Diagnose Location
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install aictrl
+        run: |
+          pip install -e .
+
+      - name: Show aictrl version
+        run: |
+          python -m aictrl version
+
+      - name: Run diagnose-location
+        run: |
+          python -m aictrl diagnose-location --json > aictrl-diagnose-location.json
+          echo "=== Diagnose Location Output ==="
+          cat aictrl-diagnose-location.json
+
+      - name: Parse and summarize (non-blocking)
+        run: |
+          python -c "
+          import json
+          import sys
+
+          with open('aictrl-diagnose-location.json') as f:
+              data = json.load(f)
+
+          enforcement = data.get('enforcement_enabled', False)
+          canonical = data.get('is_canonical', False)
+          submodule = data.get('is_submodule', False)
+          violations = data.get('violations', [])
+
+          print('=== Location Telemetry Summary ===')
+          print(f'enforcement_enabled: {enforcement}')
+          print(f'is_canonical: {canonical}')
+          print(f'is_submodule: {submodule}')
+          print(f'violations: {violations if violations else \"none\"}')
+          print('=== End Summary ===')
+
+          # Always exit 0 - this is telemetry, not gating
+          sys.exit(0)
+          "
+
+      - name: Upload telemetry artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aictrl-diagnose-location
+          path: aictrl-diagnose-location.json
+          retention-days: 30
